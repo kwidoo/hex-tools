@@ -82,6 +82,37 @@ php artisan hex:module:init NewModule --with-folders
 php artisan hex:adr:create "Domain must not use Eloquent" --status=accepted
 ```
 
+## PHPStan/Larastan
+
+Hex Tools can generate PHPStan/Larastan configs for Laravel Hexagonal Architecture projects.
+
+```bash
+composer require --dev larastan/larastan
+
+php artisan hex:phpstan:install
+php artisan hex:phpstan:install --composer-scripts
+```
+
+Generated configs:
+
+* `phpstan.neon.dist`
+* `phpstan-domain.neon`
+* `phpstan-application.neon`
+
+Run:
+
+```bash
+composer stan
+composer stan:domain
+composer stan:application
+```
+
+| Command | Description |
+|---|---|
+| `hex:phpstan:install` | Install PHPStan configs and optional composer scripts |
+| `hex:phpstan:generate` | Regenerate PHPStan config files |
+| `hex:phpstan:baseline` | Print or run PHPStan baseline generation |
+
 ## License
 
 MIT

@@ -46,6 +46,44 @@ return [
         'models' => 'App\\\\Models\\\\{module}',
     ],
 
+    'phpstan' => [
+        'enabled' => true,
+
+        'paths' => [
+            'main' => ['app'],
+            'domain' => ['app/Domain'],
+            'application' => ['app/Application'],
+        ],
+
+        'levels' => [
+            'main' => 5,
+            'domain' => 8,
+            'application' => 7,
+        ],
+
+        'tmp_dirs' => [
+            'main' => 'storage/framework/phpstan',
+            'domain' => 'storage/framework/phpstan-domain',
+            'application' => 'storage/framework/phpstan-application',
+        ],
+
+        'exclude_paths' => [
+            'database/migrations/*',
+            'database/seeders/*',
+            'bootstrap/*',
+            'storage/*',
+        ],
+
+        'includes' => [
+            'vendor/larastan/larastan/extension.neon',
+            'vendor/nesbot/carbon/extension.neon',
+        ],
+
+        'baseline' => 'phpstan-baseline.neon',
+
+        'memory_limit' => '1G',
+    ],
+
     'module_rules' => [
         'Shared' => ['Shared'],
         'User' => ['User', 'Shared'],

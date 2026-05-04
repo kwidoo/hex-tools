@@ -50,4 +50,9 @@ class HexToolsConfig
     {
         return $this->config['namespace'] ?? 'App';
     }
+
+    public function phpstan(): array
+    {
+        return $this->config['phpstan'] ?? [];
+    }
 }

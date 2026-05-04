@@ -1,0 +1,15 @@
+includes:
+{{ includes }}
+parameters:
+    paths:
+{{ domain_paths }}
+    level: {{ domain_level }}
+
+    tmpDir: {{ tmp_dir }}
+
+    checkMissingIterableValueType: true
+    checkGenericClassInNonGenericObjectType: true
+
+    excludePaths:
+        analyse:
+{{ exclude_paths }}

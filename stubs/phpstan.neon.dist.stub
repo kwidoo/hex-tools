@@ -1,0 +1,16 @@
+includes:
+{{ includes }}{{ baseline_include }}
+parameters:
+    paths:
+{{ main_paths }}
+    level: {{ main_level }}
+
+    tmpDir: {{ tmp_dir }}
+
+    checkMissingIterableValueType: true
+    checkGenericClassInNonGenericObjectType: true
+
+    excludePaths:
+        analyse:
+{{ exclude_paths }}
+    ignoreErrors: []

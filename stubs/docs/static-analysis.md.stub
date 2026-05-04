@@ -1,0 +1,169 @@
+# Static Analysis with PHPStan/Larastan
+
+## Deptrac vs PHPStan/Larastan
+
+**Deptrac** enforces *architectural boundaries*. It answers questions like:
+
+- Can `Http` depend on `Models`?
+- Can `Product` depend on `Pickup`?
+- Can `Domain` depend on Laravel?
+
+It works at the file/class import level and does not understand types.
+
+**PHPStan/Larastan** enforces *type safety and code correctness*. It answers questions like:
+
+- Does this method exist?
+- Can this value be null?
+- Does the repository implementation match the contract?
+- Does this DTO receive the expected data type?
+- Are array shapes/generics documented?
+
+Both tools are complementary — Deptrac checks architecture, PHPStan checks correctness.
+
+## Why Both Are Needed
+
+Deptrac alone cannot catch:
+- A `UseCase` accepting `mixed` instead of a typed DTO
+- A repository method returning `Model|null` when the contract expects `Model`
+- A missing iterable value type on a collection
+
+PHPStan alone cannot catch:
+- `Http` importing `Domain` entities directly
+- A module depending on another forbidden module
+- Wrong architectural layer usage
+
+Together they provide full confidence in both structure and correctness.
+
+## What `phpstan.neon.dist` Checks
+
+The main config runs against all application code at level {{ main_level }}. It checks:
+
+- Standard type safety (level {{ main_level }})
+- Missing iterable value types
+- Generic class usage in non-generic contexts
+- Excludes migrations, seeders, bootstrap, and storage
+
+## Why `phpstan-domain.neon` Is Stricter
+
+Domain code should be pure PHP — no Eloquent, no HTTP, no framework coupling. Level {{ domain_level }} enforces:
+
+- Strict return types
+- No unresolved types
+- Fully typed collections and arrays
+- No framework-specific generics leaking in
+
+Domain violations are architectural failures. They should be fixed, not ignored.
+
+## Why `phpstan-application.neon` Is Separate
+
+Application layer bridges Domain and Infrastructure. It runs at level {{ application_level }} to catch:
+
+- UseCase input/output type issues
+- DTO typing problems
+- Repository contract mismatches
+- Nullable return values
+- Missing iterable value types
+- Wrong array shapes
+
+It is slightly less strict than Domain to accommodate framework integration points.
+
+## How to Generate a Baseline
+
+If you are adding PHPStan to an existing project with many existing errors, generate a baseline to suppress known errors temporarily:
+
+```bash
+composer stan:baseline
+```
+
+Or directly:
+
+```bash
+vendor/bin/phpstan analyse --configuration=phpstan.neon.dist --generate-baseline --memory-limit={{ memory_limit }}
+```
+
+This creates `phpstan-baseline.neon`. Add it to your `phpstan.neon.dist` includes section. Commit the baseline.
+
+To regenerate configs with baseline included:
+
+```bash
+php artisan hex:phpstan:install --with-baseline --force
+```
+
+## How to Gradually Increase Levels
+
+Start at a lower level and increase over time:
+
+1. Generate baseline at current level
+2. Fix errors at the current level
+3. Remove entries from the baseline as you fix them
+4. When the baseline is empty, increase the level by 1
+5. Repeat
+
+Do not try to go from level 0 to level 9 at once.
+
+## How to Handle False Positives
+
+If PHPStan reports an error that is a false positive, you can suppress it inline:
+
+```php
+/** @phpstan-ignore-next-line */
+$result = $this->dynamicMethod();
+```
+
+Or for a whole line category:
+
+```php
+/** @phpstan-ignore method.notFound */
+$result = $this->dynamicMethod();
+```
+
+Avoid adding project-specific ignore rules to `phpstan.neon.dist`. Use the baseline or inline suppression for false positives.
+
+## Composer Scripts
+
+After running `hex:phpstan:install --composer-scripts`, the following scripts are available:
+
+```bash
+# Analyse all application code
+composer stan
+
+# Analyse Domain layer only (strict)
+composer stan:domain
+
+# Analyse Application layer only
+composer stan:application
+
+# Generate baseline
+composer stan:baseline
+```
+
+## Direct Commands
+
+```bash
+vendor/bin/phpstan analyse --configuration=phpstan.neon.dist --memory-limit={{ memory_limit }}
+vendor/bin/phpstan analyse --configuration=phpstan-domain.neon --memory-limit={{ memory_limit }}
+vendor/bin/phpstan analyse --configuration=phpstan-application.neon --memory-limit={{ memory_limit }}
+vendor/bin/phpstan analyse --configuration=phpstan.neon.dist --generate-baseline --memory-limit={{ memory_limit }}
+```
+
+## Artisan Commands
+
+```bash
+# Install PHPStan configs
+php artisan hex:phpstan:install
+
+# Install with composer scripts
+php artisan hex:phpstan:install --composer-scripts
+
+# Install with baseline reference
+php artisan hex:phpstan:install --with-baseline
+
+# Regenerate configs
+php artisan hex:phpstan:generate
+
+# Print baseline command
+php artisan hex:phpstan:baseline
+
+# Run baseline generation
+php artisan hex:phpstan:baseline --run
+```

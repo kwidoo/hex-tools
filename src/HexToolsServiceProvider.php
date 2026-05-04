@@ -8,9 +8,12 @@ use Kwidoo\HexTools\Commands\GenerateDocsCommand;
 use Kwidoo\HexTools\Commands\GenerateLayersDeptracCommand;
 use Kwidoo\HexTools\Commands\GenerateMermaidCommand;
 use Kwidoo\HexTools\Commands\GenerateModulesDeptracCommand;
+use Kwidoo\HexTools\Commands\GeneratePhpStanBaselineCommand;
+use Kwidoo\HexTools\Commands\GeneratePhpStanCommand;
 use Kwidoo\HexTools\Commands\HexMapCommand;
 use Kwidoo\HexTools\Commands\InitModuleCommand;
 use Kwidoo\HexTools\Commands\InstallHexToolsCommand;
+use Kwidoo\HexTools\Commands\InstallPhpStanCommand;
 use Kwidoo\HexTools\Config\HexToolsConfig;
 use Kwidoo\HexTools\Generators\AdrGenerator;
 use Kwidoo\HexTools\Generators\ComposerScriptsInstaller;
@@ -19,10 +22,15 @@ use Kwidoo\HexTools\Generators\DeptracModulesGenerator;
 use Kwidoo\HexTools\Generators\MermaidLayerGraphGenerator;
 use Kwidoo\HexTools\Generators\MermaidModuleGraphGenerator;
 use Kwidoo\HexTools\Generators\ModuleDocsGenerator;
+use Kwidoo\HexTools\Generators\PhpStanComposerScriptsInstaller;
+use Kwidoo\HexTools\Generators\PhpStanConfigGenerator;
+use Kwidoo\HexTools\Generators\StaticAnalysisDocsGenerator;
 use Kwidoo\HexTools\Scanners\ClassNameResolver;
 use Kwidoo\HexTools\Scanners\ModuleScanner;
 use Kwidoo\HexTools\Support\Filesystem;
+use Kwidoo\HexTools\Support\ProcessRunner;
 use Kwidoo\HexTools\Support\StubRenderer;
+use Kwidoo\HexTools\Support\ToolAvailability;
 
 class HexToolsServiceProvider extends ServiceProvider
 {
@@ -36,7 +44,10 @@ class HexToolsServiceProvider extends ServiceProvider
 
         $this->app->singleton(Filesystem::class);
         $this->app->singleton(StubRenderer::class);
+        $this->app->singleton(ToolAvailability::class);
+        $this->app->singleton(ProcessRunner::class);
         $this->app->singleton(ComposerScriptsInstaller::class);
+        $this->app->singleton(PhpStanComposerScriptsInstaller::class);
 
         $this->app->singleton(ClassNameResolver::class, function ($app) {
             $config = $app->make(HexToolsConfig::class);
@@ -89,6 +100,21 @@ class HexToolsServiceProvider extends ServiceProvider
                 $app->make(StubRenderer::class)
             );
         });
+
+        $this->app->singleton(PhpStanConfigGenerator::class, function ($app) {
+            return new PhpStanConfigGenerator(
+                $app->make(HexToolsConfig::class),
+                $app->make(StubRenderer::class)
+            );
+        });
+
+        $this->app->singleton(StaticAnalysisDocsGenerator::class, function ($app) {
+            return new StaticAnalysisDocsGenerator(
+                $app->make(HexToolsConfig::class),
+                $app->make(StubRenderer::class)
+            );
+        });
+
     }
 
     public function boot(): void
@@ -107,6 +133,9 @@ class HexToolsServiceProvider extends ServiceProvider
                 GenerateDocsCommand::class,
                 GenerateMermaidCommand::class,
                 CreateAdrCommand::class,
+                InstallPhpStanCommand::class,
+                GeneratePhpStanCommand::class,
+                GeneratePhpStanBaselineCommand::class,
             ]);
         }
     }
