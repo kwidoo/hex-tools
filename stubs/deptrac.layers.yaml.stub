@@ -1,0 +1,83 @@
+deptrac:
+  paths:
+    - app
+  layers:
+    - name: Domain
+      collectors:
+        - type: directory
+          value: app/Domain/.*
+    - name: Application
+      collectors:
+        - type: directory
+          value: app/Application/.*
+    - name: Http
+      collectors:
+        - type: directory
+          value: app/Http/.*
+    - name: Infrastructure
+      collectors:
+        - type: directory
+          value: app/Infrastructure/.*
+    - name: Models
+      collectors:
+        - type: directory
+          value: app/Models/.*
+    - name: Support
+      collectors:
+        - type: directory
+          value: app/Support/.*
+    - name: Providers
+      collectors:
+        - type: directory
+          value: app/Providers/.*
+    - name: Console
+      collectors:
+        - type: directory
+          value: app/Console/.*
+    - name: Framework
+      collectors:
+        - type: classLike
+          value: Illuminate\\.*
+        - type: classLike
+          value: Laravel\\.*
+    - name: Vendor
+      collectors:
+        - type: directory
+          value: vendor/.*
+  ruleset:
+    Domain: ~
+    Application:
+      - Domain
+    Http:
+      - Application
+      - Domain
+      - Framework
+      - Vendor
+    Infrastructure:
+      - Application
+      - Domain
+      - Models
+      - Framework
+      - Vendor
+    Models:
+      - Domain
+      - Framework
+      - Vendor
+    Providers:
+      - Domain
+      - Application
+      - Http
+      - Infrastructure
+      - Models
+      - Support
+      - Console
+      - Framework
+      - Vendor
+    Support:
+      - Framework
+      - Vendor
+    Console:
+      - Application
+      - Domain
+      - Framework
+      - Vendor

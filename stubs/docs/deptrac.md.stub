@@ -1,0 +1,128 @@
+# Architecture Checks with Deptrac
+
+Generated: {{ date }}
+
+## Overview
+
+This project uses [Deptrac](https://github.com/qossmic/deptrac) to enforce two types of architecture boundaries:
+
+| Config file | Enforces |
+|---|---|
+| `deptrac.layers.yaml` | Technical layer boundaries (Domain, Application, Http, Infrastructure, …) |
+| `deptrac.modules.yaml` | Business module boundaries (which modules may depend on which) |
+
+---
+
+## Layer Checks (`deptrac.layers.yaml`)
+
+### What it enforces
+
+| Layer | May depend on |
+|---|---|
+| Domain | _(nothing)_ |
+| Application | Domain |
+| Http | Application, Domain, Framework, Vendor |
+| Infrastructure | Application, Domain, Models, Framework, Vendor |
+| Models | Domain, Framework, Vendor |
+| Support | Framework, Vendor |
+| Console | Application, Domain, Framework, Vendor |
+| Providers | Everything |
+
+### What it forbids
+
+- `Http → Models` (controllers must not touch Eloquent directly)
+- `Http → Infrastructure`
+- `Application → Http`
+- `Application → Models`
+- `Application → Infrastructure`
+- `Domain → Application`
+- `Domain → Http`
+- `Domain → Infrastructure`
+- `Domain → Laravel/Eloquent`
+
+### Running layer checks
+
+```bash
+vendor/bin/deptrac analyse --config-file=deptrac.layers.yaml
+
+# Via composer script (after hex:install --composer-scripts)
+composer hex:layers
+```
+
+### Inspect a specific layer
+
+```bash
+vendor/bin/deptrac debug:layer --config-file=deptrac.layers.yaml Http
+vendor/bin/deptrac debug:layer --config-file=deptrac.layers.yaml Domain
+```
+
+### Find unassigned classes
+
+```bash
+vendor/bin/deptrac debug:unassigned --config-file=deptrac.layers.yaml
+```
+
+---
+
+## Module Checks (`deptrac.modules.yaml`)
+
+### What it enforces
+
+Each business module (e.g. `Product`, `Order`) is collected from all layers but treated as a single unit. The config defines which modules may depend on which.
+
+### Running module checks
+
+```bash
+vendor/bin/deptrac analyse --config-file=deptrac.modules.yaml
+
+# Via composer script
+composer hex:modules
+```
+
+### Inspect which classes belong to a module
+
+```bash
+vendor/bin/deptrac debug:layer --config-file=deptrac.modules.yaml Product
+```
+
+### Inspect dependencies between two modules
+
+```bash
+vendor/bin/deptrac debug:dependencies --config-file=deptrac.modules.yaml Product Pickup
+vendor/bin/deptrac debug:dependencies --config-file=deptrac.modules.yaml Product Order
+```
+
+### Find unassigned classes
+
+```bash
+vendor/bin/deptrac debug:unassigned --config-file=deptrac.modules.yaml
+```
+
+---
+
+## Interpreting Violations
+
+A violation means a class in layer/module **A** depends on a class in layer/module **B**, and that dependency is not allowed.
+
+To investigate:
+
+1. Read the full class name from the violation output.
+2. Find where it is used (imports, constructor arguments, etc.).
+3. Either fix the violation or document it as technical debt in `docs/adr/`.
+
+---
+
+## Documenting Known Technical Debt
+
+Use Architecture Decision Records (ADRs) to track intentional violations:
+
+```bash
+php artisan hex:adr:create "ProductResource temporarily queries Eloquent" --status=accepted
+```
+
+Reference the ADR in a Deptrac ignore comment if needed:
+
+```php
+// deptrac-ignore-next-line: documented in docs/adr/0001-...
+use App\Models\Product;
+```

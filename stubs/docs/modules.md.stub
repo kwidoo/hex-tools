@@ -1,0 +1,43 @@
+# Architecture Modules
+
+Generated: {{ date }}
+
+## Overview
+
+This project is organized into the following business modules. Each module owns its classes across all technical layers (Domain, Application, Infrastructure, Http, Models).
+
+## Modules
+
+{{ modules_list }}
+
+---
+
+## Inspecting Modules
+
+Show which classes belong to a module:
+
+```bash
+vendor/bin/deptrac debug:layer --config-file=deptrac.modules.yaml Product
+```
+
+Check if two modules depend on each other:
+
+```bash
+vendor/bin/deptrac debug:dependencies --config-file=deptrac.modules.yaml Product Pickup
+```
+
+Find classes not assigned to any module:
+
+```bash
+vendor/bin/deptrac debug:unassigned --config-file=deptrac.modules.yaml
+```
+
+Run all module boundary checks:
+
+```bash
+vendor/bin/deptrac analyse --config-file=deptrac.modules.yaml
+```
+
+---
+
+See [deptrac.md](deptrac.md) for more details on how architecture checks work.

@@ -1,0 +1,17 @@
+# ADR {{ adr_number }}: {{ adr_title }}
+
+## Status
+
+{{ adr_status }}
+
+## Context
+
+Describe the architecture problem or force that led to this decision.
+
+## Decision
+
+Describe the decision that was made and the reasoning behind it.
+
+## Consequences
+
+Describe trade-offs, follow-up work, or impact on the rest of the architecture.

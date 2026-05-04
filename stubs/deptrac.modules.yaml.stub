@@ -1,0 +1,24 @@
+deptrac:
+  paths:
+    - app
+  layers:
+    - name: ExampleModule
+      collectors:
+        - type: directory
+          value: app/Domain/ExampleModule/.*
+        - type: directory
+          value: app/Application/ExampleModule/.*
+        - type: directory
+          value: app/Infrastructure/ExampleModule/.*
+        - type: directory
+          value: app/Support/ExampleModule/.*
+        - type: classLike
+          value: App\\Http\\Controllers\\.*ExampleModule.*
+        - type: classLike
+          value: App\\Http\\Requests\\.*ExampleModule.*
+        - type: classLike
+          value: App\\Http\\Resources\\.*ExampleModule.*
+        - type: classLike
+          value: App\\Models\\ExampleModule
+  ruleset:
+    ExampleModule: ~

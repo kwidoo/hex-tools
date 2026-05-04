@@ -1,0 +1,67 @@
+# {{ module }} Module
+
+Generated: {{ date }}
+
+## Overview
+
+The `{{ module }}` module owns all classes across Domain, Application, Infrastructure, Http, and Models that belong to this business domain.
+
+## Allowed Dependencies
+
+This module may depend on:
+
+{{ allowed_dependencies }}
+
+## Forbidden Dependencies
+
+This module must NOT depend on:
+
+{{ forbidden_dependencies }}
+
+---
+
+## Architecture Inspection
+
+```bash
+# List all classes in this module
+vendor/bin/deptrac debug:layer --config-file=deptrac.modules.yaml {{ module }}
+
+# Check dependencies from this module to another
+vendor/bin/deptrac debug:dependencies --config-file=deptrac.modules.yaml {{ module }} Shared
+
+# Run module boundary checks
+vendor/bin/deptrac analyse --config-file=deptrac.modules.yaml
+```
+
+## Folder Structure
+
+```
+app/Domain/{{ module }}/
+  Entities/
+  ValueObjects/
+  Enums/
+  Exceptions/
+  Contracts/
+
+app/Application/{{ module }}/
+  Data/
+  UseCases/
+  Services/
+  Contracts/
+
+app/Infrastructure/{{ module }}/
+  Persistence/
+  Mappers/
+  Adapters/
+
+app/Http/Controllers/   (*{{ module }}*)
+app/Http/Requests/      (*{{ module }}*)
+app/Http/Resources/     (*{{ module }}*)
+app/Models/{{ module }}
+```
+
+---
+
+## All Modules
+
+{{ modules_list }}
