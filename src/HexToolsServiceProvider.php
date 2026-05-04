@@ -6,6 +6,7 @@ use Illuminate\Support\ServiceProvider;
 use Kwidoo\HexTools\Commands\CreateAdrCommand;
 use Kwidoo\HexTools\Commands\GenerateDocsCommand;
 use Kwidoo\HexTools\Commands\GenerateLayersDeptracCommand;
+use Kwidoo\HexTools\Commands\GenerateMermaidCommand;
 use Kwidoo\HexTools\Commands\GenerateModulesDeptracCommand;
 use Kwidoo\HexTools\Commands\HexMapCommand;
 use Kwidoo\HexTools\Commands\InitModuleCommand;
@@ -15,6 +16,8 @@ use Kwidoo\HexTools\Generators\AdrGenerator;
 use Kwidoo\HexTools\Generators\ComposerScriptsInstaller;
 use Kwidoo\HexTools\Generators\DeptracLayersGenerator;
 use Kwidoo\HexTools\Generators\DeptracModulesGenerator;
+use Kwidoo\HexTools\Generators\MermaidLayerGraphGenerator;
+use Kwidoo\HexTools\Generators\MermaidModuleGraphGenerator;
 use Kwidoo\HexTools\Generators\ModuleDocsGenerator;
 use Kwidoo\HexTools\Scanners\ClassNameResolver;
 use Kwidoo\HexTools\Scanners\ModuleScanner;
@@ -72,6 +75,20 @@ class HexToolsServiceProvider extends ServiceProvider
                 $app->make(StubRenderer::class)
             );
         });
+
+        $this->app->singleton(MermaidModuleGraphGenerator::class, function ($app) {
+            return new MermaidModuleGraphGenerator(
+                $app->make(HexToolsConfig::class),
+                $app->make(StubRenderer::class)
+            );
+        });
+
+        $this->app->singleton(MermaidLayerGraphGenerator::class, function ($app) {
+            return new MermaidLayerGraphGenerator(
+                $app->make(HexToolsConfig::class),
+                $app->make(StubRenderer::class)
+            );
+        });
     }
 
     public function boot(): void
@@ -88,6 +105,7 @@ class HexToolsServiceProvider extends ServiceProvider
                 HexMapCommand::class,
                 InitModuleCommand::class,
                 GenerateDocsCommand::class,
+                GenerateMermaidCommand::class,
                 CreateAdrCommand::class,
             ]);
         }

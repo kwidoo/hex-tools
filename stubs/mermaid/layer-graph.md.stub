@@ -1,0 +1,9 @@
+# Layer Architecture Graph
+
+Generated: {{ date }}
+
+```mermaid
+{{ diagram }}
+```
+
+Each arrow represents an allowed dependency between technical layers. Layers not shown as a source have no inward-allowed dependencies beyond Framework and Vendor.

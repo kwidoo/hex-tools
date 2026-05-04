@@ -1,0 +1,9 @@
+# Module Dependency Graph
+
+Generated: {{ date }}
+
+```mermaid
+{{ diagram }}
+```
+
+Each arrow represents an allowed dependency between business modules. A module not shown as a source has no outgoing dependencies beyond itself.
