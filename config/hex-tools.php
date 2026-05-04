@@ -46,6 +46,66 @@ return [
         'models' => 'App\\\\Models\\\\{module}',
     ],
 
+    'phpmd' => [
+        'enabled' => true,
+
+        'paths' => [
+            'main' => 'app',
+            'domain' => 'app/Domain',
+            'application' => 'app/Application',
+        ],
+
+        'ruleset' => 'phpmd.xml',
+        'baseline' => 'phpmd.baseline.xml',
+
+        'exclude' => [
+            'app/Providers',
+            'app/Console',
+            'database',
+            'bootstrap',
+            'storage',
+            'vendor',
+        ],
+
+        'suffixes' => 'php',
+
+        'format' => 'text',
+
+        'rules' => [
+            'main' => [
+                'codesize',
+                'design',
+                'naming',
+                'unusedcode',
+            ],
+
+            'domain' => [
+                'codesize',
+                'design',
+                'naming',
+                'unusedcode',
+                'cleancode',
+            ],
+
+            'application' => [
+                'codesize',
+                'design',
+                'naming',
+                'unusedcode',
+            ],
+        ],
+
+        'thresholds' => [
+            'cyclomatic_complexity_report_level' => 10,
+            'npath_complexity_report_level' => 200,
+            'excessive_method_length_minimum' => 80,
+            'excessive_class_length_minimum' => 400,
+            'too_many_methods_maxmethods' => 20,
+            'too_many_public_methods_maxmethods' => 15,
+            'coupling_between_objects_maximum' => 13,
+        ],
+    ],
+
     'phpstan' => [
         'enabled' => true,
 

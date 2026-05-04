@@ -8,9 +8,13 @@ use Kwidoo\HexTools\Commands\GenerateDocsCommand;
 use Kwidoo\HexTools\Commands\GenerateLayersDeptracCommand;
 use Kwidoo\HexTools\Commands\GenerateMermaidCommand;
 use Kwidoo\HexTools\Commands\GenerateModulesDeptracCommand;
+use Kwidoo\HexTools\Commands\GeneratePhpMdBaselineCommand;
+use Kwidoo\HexTools\Commands\GeneratePhpMdCommand;
 use Kwidoo\HexTools\Commands\GeneratePhpStanBaselineCommand;
 use Kwidoo\HexTools\Commands\GeneratePhpStanCommand;
 use Kwidoo\HexTools\Commands\HexMapCommand;
+use Kwidoo\HexTools\Commands\InstallPhpMdCommand;
+use Kwidoo\HexTools\Commands\RunPhpMdCommand;
 use Kwidoo\HexTools\Commands\InitModuleCommand;
 use Kwidoo\HexTools\Commands\InstallHexToolsCommand;
 use Kwidoo\HexTools\Commands\InstallPhpStanCommand;
@@ -22,6 +26,9 @@ use Kwidoo\HexTools\Generators\DeptracModulesGenerator;
 use Kwidoo\HexTools\Generators\MermaidLayerGraphGenerator;
 use Kwidoo\HexTools\Generators\MermaidModuleGraphGenerator;
 use Kwidoo\HexTools\Generators\ModuleDocsGenerator;
+use Kwidoo\HexTools\Generators\PhpMdComposerScriptsInstaller;
+use Kwidoo\HexTools\Generators\PhpMdDocsGenerator;
+use Kwidoo\HexTools\Generators\PhpMdRulesetGenerator;
 use Kwidoo\HexTools\Generators\PhpStanComposerScriptsInstaller;
 use Kwidoo\HexTools\Generators\PhpStanConfigGenerator;
 use Kwidoo\HexTools\Generators\StaticAnalysisDocsGenerator;
@@ -48,6 +55,7 @@ class HexToolsServiceProvider extends ServiceProvider
         $this->app->singleton(ProcessRunner::class);
         $this->app->singleton(ComposerScriptsInstaller::class);
         $this->app->singleton(PhpStanComposerScriptsInstaller::class);
+        $this->app->singleton(PhpMdComposerScriptsInstaller::class);
 
         $this->app->singleton(ClassNameResolver::class, function ($app) {
             $config = $app->make(HexToolsConfig::class);
@@ -115,6 +123,19 @@ class HexToolsServiceProvider extends ServiceProvider
             );
         });
 
+        $this->app->singleton(PhpMdRulesetGenerator::class, function ($app) {
+            return new PhpMdRulesetGenerator(
+                $app->make(HexToolsConfig::class),
+                $app->make(StubRenderer::class)
+            );
+        });
+
+        $this->app->singleton(PhpMdDocsGenerator::class, function ($app) {
+            return new PhpMdDocsGenerator(
+                $app->make(HexToolsConfig::class),
+                $app->make(StubRenderer::class)
+            );
+        });
     }
 
     public function boot(): void
@@ -136,6 +157,10 @@ class HexToolsServiceProvider extends ServiceProvider
                 InstallPhpStanCommand::class,
                 GeneratePhpStanCommand::class,
                 GeneratePhpStanBaselineCommand::class,
+                InstallPhpMdCommand::class,
+                GeneratePhpMdCommand::class,
+                GeneratePhpMdBaselineCommand::class,
+                RunPhpMdCommand::class,
             ]);
         }
     }

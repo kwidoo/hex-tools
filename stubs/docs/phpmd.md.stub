@@ -1,0 +1,187 @@
+# Code Quality with PHPMD
+
+## What PHPMD Checks
+
+PHPMD (PHP Mess Detector) detects code smells and maintainability issues:
+
+- Large classes (too many lines, too many methods)
+- Large methods (too many lines, too many branches)
+- Complex methods (cyclomatic/NPath complexity)
+- Unused private fields, methods, and parameters
+- Bad or inconsistent naming
+- Too many dependencies (coupling between objects)
+- Too many public methods
+
+Default thresholds (configurable in `config/hex-tools.php`):
+
+| Rule | Threshold |
+|---|---|
+| CyclomaticComplexity | {{ cyclomatic_complexity_report_level }} |
+| NPathComplexity | {{ npath_complexity_report_level }} |
+| ExcessiveMethodLength | {{ excessive_method_length_minimum }} lines |
+| ExcessiveClassLength | {{ excessive_class_length_minimum }} lines |
+| TooManyMethods | {{ too_many_methods_maxmethods }} methods |
+| TooManyPublicMethods | {{ too_many_public_methods_maxmethods }} public methods |
+| CouplingBetweenObjects | {{ coupling_between_objects_maximum }} dependencies |
+
+## PHPMD vs PHPStan vs Deptrac vs Pint
+
+| Tool | Purpose |
+|---|---|
+| **Pint** | Code formatting (whitespace, style) |
+| **PHPStan/Larastan** | Type correctness (missing methods, null safety, type mismatches) |
+| **Deptrac** | Architecture boundaries (which layers/modules may depend on which) |
+| **PHPMD** | Code smells and maintainability (too complex, too large, unused code) |
+
+These tools are complementary. PHPMD does not replace the others.
+
+## Why PHPMD Is Useful in Hexagonal Architecture
+
+In a Hexagonal / Clean Architecture project:
+
+- **Domain** classes should be small, focused, and have low complexity. PHPMD enforces this.
+- **UseCases** that are too long or too complex are a sign of doing too much. PHPMD catches this.
+- **Infrastructure** classes with too many dependencies indicate coupling that should be broken apart.
+- **Unused parameters** in repository implementations or adapters are often dead code from abandoned refactors.
+
+PHPMD keeps each layer clean over time, preventing code rot.
+
+## Why Domain Can Be Stricter
+
+Domain code should be pure PHP — no framework coupling, no HTTP, no persistence. It should also be the simplest and most focused code in the project. If a Domain class is large or complex, it is usually doing too much.
+
+Consider enabling `cleancode` rules for Domain-only scans:
+
+```bash
+vendor/bin/phpmd app/Domain text phpmd.xml
+```
+
+## How to Run PHPMD
+
+```bash
+# Full application scan
+composer md
+
+# Domain layer only
+composer md:domain
+
+# Application layer only
+composer md:application
+
+# Generate HTML report
+composer md:report
+```
+
+Direct commands:
+
+```bash
+vendor/bin/phpmd app text phpmd.xml
+vendor/bin/phpmd app/Domain text phpmd.xml
+vendor/bin/phpmd app/Application text phpmd.xml
+vendor/bin/phpmd app html phpmd.xml --reportfile build/architecture/phpmd.html
+```
+
+Or via artisan:
+
+```bash
+php artisan hex:phpmd:run
+php artisan hex:phpmd:run --path=app/Domain
+php artisan hex:phpmd:run --format=html --reportfile=build/architecture/phpmd.html
+```
+
+## How to Generate a Baseline
+
+If you are adding PHPMD to an existing project with many violations, generate a baseline to suppress known issues temporarily:
+
+```bash
+composer md:baseline
+```
+
+Or directly:
+
+```bash
+vendor/bin/phpmd app text phpmd.xml --generate-baseline --baseline-file phpmd.baseline.xml
+```
+
+This creates `phpmd.baseline.xml`. PHPMD will then only report new violations not in the baseline. Commit the baseline file.
+
+Or via artisan:
+
+```bash
+php artisan hex:phpmd:baseline --run
+```
+
+## How to Update the Baseline
+
+When you fix some violations and want to remove them from the baseline:
+
+```bash
+composer md:update-baseline
+```
+
+Or directly:
+
+```bash
+vendor/bin/phpmd app text phpmd.xml --update-baseline --baseline-file phpmd.baseline.xml
+```
+
+## How to Tune Thresholds
+
+Edit `config/hex-tools.php` under the `phpmd.thresholds` key:
+
+```php
+'thresholds' => [
+    'cyclomatic_complexity_report_level' => 10,
+    'npath_complexity_report_level' => 200,
+    'excessive_method_length_minimum' => 80,
+    'excessive_class_length_minimum' => 400,
+    'too_many_methods_maxmethods' => 20,
+    'too_many_public_methods_maxmethods' => 15,
+    'coupling_between_objects_maximum' => 13,
+],
+```
+
+Then regenerate `phpmd.xml`:
+
+```bash
+php artisan hex:phpmd:generate --force
+```
+
+## How to Suppress False Positives
+
+Prefer inline suppression over editing the ruleset:
+
+```php
+/**
+ * @SuppressWarnings(PHPMD.ExcessiveMethodLength)
+ */
+public function handle(): void
+{
+    // long but necessary method
+}
+```
+
+Or suppress multiple rules:
+
+```php
+/**
+ * @SuppressWarnings(PHPMD.TooManyMethods)
+ * @SuppressWarnings(PHPMD.CouplingBetweenObjects)
+ */
+class ComplexOrchestrator
+{
+}
+```
+
+Do not add suppressions to `phpmd.xml` for project-specific cases. Use inline annotations or the baseline instead.
+
+## Enabled Rules by Default
+
+| Rule Set | Excluded Rules |
+|---|---|
+| `codesize` | `ExcessiveParameterList` |
+| `design` | `NumberOfChildren` |
+| `naming` | `ShortVariable`, `LongVariable` |
+| `unusedcode` | _(none)_ |
+
+`ExcessiveParameterList` is excluded because Laravel constructors with many injected dependencies are normal. `NumberOfChildren` is excluded because Laravel base classes are heavily extended. `ShortVariable` and `LongVariable` are excluded because common PHP idioms use short names like `$i`, `$id`, `$e`.

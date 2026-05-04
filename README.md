@@ -82,6 +82,44 @@ php artisan hex:module:init NewModule --with-folders
 php artisan hex:adr:create "Domain must not use Eloquent" --status=accepted
 ```
 
+## PHPMD
+
+Hex Tools can generate a Laravel-friendly PHPMD ruleset.
+
+Install PHPMD:
+
+```bash
+composer require --dev phpmd/phpmd
+```
+
+Generate config:
+
+```bash
+php artisan hex:phpmd:install
+php artisan hex:phpmd:install --composer-scripts
+```
+
+Run:
+
+```bash
+composer md
+composer md:domain
+composer md:application
+```
+
+Generate baseline for existing projects:
+
+```bash
+composer md:baseline
+```
+
+| Command | Description |
+|---|---|
+| `hex:phpmd:install` | Install PHPMD ruleset and optional composer scripts |
+| `hex:phpmd:generate` | Regenerate PHPMD ruleset |
+| `hex:phpmd:baseline` | Print or run PHPMD baseline generation |
+| `hex:phpmd:run` | Run PHPMD using generated rules |
+
 ## PHPStan/Larastan
 
 Hex Tools can generate PHPStan/Larastan configs for Laravel Hexagonal Architecture projects.
