@@ -1,5 +1,10 @@
 # Hex Tools
 
+[![CI](https://github.com/kwidoo/hex-tools/actions/workflows/ci.yml/badge.svg)](https://github.com/kwidoo/hex-tools/actions/workflows/ci.yml)
+[![License: MIT](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
+[![PHP](https://img.shields.io/badge/PHP-8.2%2B-blue.svg)](https://www.php.net)
+[![Laravel](https://img.shields.io/badge/Laravel-11%20%7C%2012%20%7C%2013-red.svg)](https://laravel.com)
+
 Laravel development tools for Hexagonal / Clean Architecture projects.
 
 ## Installation
