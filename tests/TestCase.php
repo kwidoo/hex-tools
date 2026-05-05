@@ -21,7 +21,7 @@ abstract class TestCase extends OrchestraTestCase
             'adr' => $app->basePath('docs/adr'),
             'build' => $app->basePath('build/architecture'),
         ]);
-        $app['config']->set('hex-tools.modules', ['Product', 'Order', 'Shared']);
+        $app['config']->set('hex-tools.modules', ['Example', 'Shared']);
         $app['config']->set('hex-tools.layers', [
             'domain' => 'app/Domain',
             'application' => 'app/Application',
@@ -44,8 +44,7 @@ abstract class TestCase extends OrchestraTestCase
         ]);
         $app['config']->set('hex-tools.module_rules', [
             'Shared' => ['Shared'],
-            'Product' => ['Product', 'Shared'],
-            'Order' => ['Order', 'Product', 'Shared'],
+            'Example' => ['Example', 'Shared'],
         ]);
     }
 }

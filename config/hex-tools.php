@@ -22,18 +22,23 @@ return [
         'expected_layers' => ['Domain', 'Application'],
     ],
 
+    /*
+    |--------------------------------------------------------------------------
+    | Module Configuration
+    |--------------------------------------------------------------------------
+    |
+    | Define your business modules here. Each module represents a bounded
+    | context in your domain. The package will generate Deptrac configs
+    | to enforce boundaries between these modules.
+    |
+    | Example modules are provided below. Replace them with your own
+    | module names that reflect your business domain.
+    |
+    */
+
     'modules' => [
-        'Billing',
-        'Category',
-        'Farmer',
-        'Notification',
-        'Offer',
-        'Order',
-        'Payment',
-        'Pickup',
-        'Product',
+        'Example',
         'Shared',
-        'User',
     ],
 
     'layers' => [
@@ -157,16 +162,27 @@ return [
     ],
 
     'module_rules' => [
+        /*
+        |--------------------------------------------------------------------------
+        | Module Dependency Rules
+        |--------------------------------------------------------------------------
+        |
+        | Define which modules each module is allowed to depend on.
+        | A module may depend on itself implicitly, so you don't need
+        | to list it in its own dependencies.
+        |
+        | The 'Shared' module is typically a common module that other
+        | modules can depend on without creating circular dependencies.
+        |
+        | Example:
+        |   'Order' => ['Order', 'Product', 'User', 'Shared'],
+        |   'Product' => ['Product', 'Shared'],
+        |   'User' => ['User', 'Shared'],
+        |   'Shared' => ['Shared'],
+        |
+        */
+
         'Shared' => ['Shared'],
-        'User' => ['User', 'Shared'],
-        'Farmer' => ['Farmer', 'User', 'Shared'],
-        'Category' => ['Category', 'Shared'],
-        'Product' => ['Product', 'Category', 'Farmer', 'Shared'],
-        'Pickup' => ['Pickup', 'Farmer', 'Shared'],
-        'Offer' => ['Offer', 'Product', 'Category', 'Farmer', 'Pickup', 'Shared'],
-        'Order' => ['Order', 'Offer', 'Product', 'Category', 'User', 'Farmer', 'Pickup', 'Shared'],
-        'Payment' => ['Payment', 'Order', 'User', 'Shared'],
-        'Billing' => ['Billing', 'Order', 'Payment', 'User', 'Farmer', 'Shared'],
-        'Notification' => ['Notification', 'User', 'Farmer', 'Category', 'Product', 'Pickup', 'Offer', 'Order', 'Payment', 'Billing', 'Shared'],
+        'Example' => ['Example', 'Shared'],
     ],
 ];

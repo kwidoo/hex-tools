@@ -61,6 +61,38 @@ php artisan vendor:publish --tag=hex-tools-config
 
 Edit `config/hex-tools.php` to define your modules and allowed dependencies.
 
+### Module Configuration
+
+The package uses a neutral default configuration with example modules. You should replace these with your own business domain modules:
+
+```php
+// config/hex-tools.php
+
+'modules' => [
+    // Define your business modules here
+    'User',
+    'Product',
+    'Order',
+    'Payment',
+    'Shared',  // Common utilities shared across modules
+],
+
+'module_rules' => [
+    // Define which modules each module can depend on
+    'Shared' => ['Shared'],
+    'User' => ['User', 'Shared'],
+    'Product' => ['Product', 'Shared'],
+    'Order' => ['Order', 'Product', 'User', 'Shared'],
+    'Payment' => ['Payment', 'Order', 'User', 'Shared'],
+],
+```
+
+**Guidelines:**
+- Each module represents a bounded context in your domain
+- The `Shared` module is typically used for common code that other modules can depend on
+- A module may depend on itself implicitly (no need to list it)
+- Avoid circular dependencies between modules
+
 ## Example
 
 ```bash
