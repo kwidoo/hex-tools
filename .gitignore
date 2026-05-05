@@ -1,1 +1,0 @@
-Nothing needs to be added to .gitignore since the changes only include PHP source files (.php) and no build artifacts, dependencies, or temporary files that should be ignored.

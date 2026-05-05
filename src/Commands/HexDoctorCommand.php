@@ -8,6 +8,8 @@ use Kwidoo\HexTools\Reports\ConfigStatus;
 use Kwidoo\HexTools\Reports\ComposerScriptStatus;
 use Kwidoo\HexTools\Reports\DoctorReport;
 use Kwidoo\HexTools\Reports\ToolStatus;
+use Kwidoo\HexTools\Domain\Architecture\DoctorCheck;
+use Kwidoo\HexTools\Domain\Architecture\DoctorReport;
 use Kwidoo\HexTools\Support\ProcessRunner;
 use Kwidoo\HexTools\Support\ToolAvailability;
 
@@ -37,11 +39,13 @@ class HexDoctorCommand extends Command
 
     public function handle(): int
     {
-        $report = $this->buildReport();
+        $checks = $this->buildChecks();
 
         if ($this->option('run-checks')) {
-            $report->results = $this->runChecks($report);
+            $checks = array_merge($checks, $this->runChecks());
         }
+
+        $report = new DoctorReport($checks);
 
         if ($this->option('format') === 'json') {
             $this->outputJson($report);
@@ -49,37 +53,56 @@ class HexDoctorCommand extends Command
             $this->outputTable($report);
         }
 
-        if ($this->option('strict') && $report->hasMissingImportantItems()) {
+        if ($this->option('strict') && $report->hasFailures(true)) {
             return self::FAILURE;
         }
 
         return self::SUCCESS;
     }
 
-    protected function buildReport(): DoctorReport
+    /** @return DoctorCheck[] */
+    protected function buildChecks(): array
     {
-        $report = new DoctorReport();
+        $checks = [];
 
-        $report->tools = [
-            new ToolStatus('Deptrac', $this->toolAvailability->hasDeptrac(), 'vendor/bin/deptrac'),
-            new ToolStatus('PHPStan', $this->toolAvailability->hasPhpStan(), 'vendor/bin/phpstan'),
-            new ToolStatus('PHPMD', $this->toolAvailability->hasPhpMd(), 'vendor/bin/phpmd'),
-            new ToolStatus('Pint', $this->toolAvailability->hasPint(), 'vendor/bin/pint'),
-            new ToolStatus('Rector', $this->toolAvailability->hasRector(), 'vendor/bin/rector'),
-            new ToolStatus('Composer audit', true, 'composer audit'),
+        // Tools
+        $tools = [
+            ['Deptrac', $this->toolAvailability->hasDeptrac(), 'vendor/bin/deptrac'],
+            ['PHPStan', $this->toolAvailability->hasPhpStan(), 'vendor/bin/phpstan'],
+            ['PHPMD', $this->toolAvailability->hasPhpMd(), 'vendor/bin/phpmd'],
+            ['Pint', $this->toolAvailability->hasPint(), 'vendor/bin/pint'],
+            ['Rector', $this->toolAvailability->hasRector(), 'vendor/bin/rector'],
+            ['Composer audit', true, 'composer audit'],
         ];
 
+        foreach ($tools as [$name, $installed, $binary]) {
+            $checks[] = new DoctorCheck(
+                $installed ? 'ok' : 'warn',
+                strtolower(str_replace(' ', '_', $name)),
+                $installed ? "{$name} is installed" : "{$name} is missing",
+                $installed ? null : $binary
+            );
+        }
+
+        // Configs
         $configs = [
             'deptrac.layers.yaml', 'deptrac.modules.yaml',
             'phpstan.neon.dist', 'phpstan-domain.neon', 'phpstan-application.neon',
             'phpmd.xml', 'pint.json', 'rector.php',
         ];
         foreach ($configs as $file) {
-            $report->configs[] = new ConfigStatus($file, $file, file_exists(base_path($file)));
+            $exists = file_exists(base_path($file));
+            $checks[] = new DoctorCheck(
+                $exists ? 'ok' : 'warn',
+                'config_' . strtolower(str_replace('.', '_', $file)),
+                $exists ? "Config {$file} exists" : "Config {$file} is missing",
+                $exists ? null : base_path($file)
+            );
         }
 
         $report->composerScripts = $this->checkComposerScripts();
 
+        // Docs
         $docs = [
             'docs/architecture/deptrac.md',
             'docs/architecture/static-analysis.md',
@@ -87,9 +110,16 @@ class HexDoctorCommand extends Command
             'docs/architecture/modules.md',
         ];
         foreach ($docs as $file) {
-            $report->docs[] = new ConfigStatus($file, $file, file_exists(base_path($file)));
+            $exists = file_exists(base_path($file));
+            $checks[] = new DoctorCheck(
+                $exists ? 'ok' : 'info',
+                'doc_' . strtolower(str_replace('/', '_', str_replace('.', '_', $file))),
+                $exists ? "Doc {$file} exists" : "Doc {$file} is missing",
+                $exists ? null : base_path($file)
+            );
         }
 
+        // Folders
         $folders = [
             'app/Domain', 'app/Application', 'app/Infrastructure',
             'app/Http', 'app/Models',
@@ -97,12 +127,16 @@ class HexDoctorCommand extends Command
             'build/architecture',
         ];
         foreach ($folders as $folder) {
-            $report->folders[] = new ConfigStatus($folder, $folder, is_dir(base_path($folder)));
+            $exists = is_dir(base_path($folder));
+            $checks[] = new DoctorCheck(
+                $exists ? 'ok' : 'warn',
+                'folder_' . strtolower(str_replace('/', '_', $folder)),
+                $exists ? "Folder {$folder} exists" : "Folder {$folder} is missing",
+                $exists ? null : base_path($folder)
+            );
         }
 
-        $report->suggestions = $this->buildSuggestions($report);
-
-        return $report;
+        return $checks;
     }
 
     /** @return ComposerScriptStatus[] */
@@ -123,71 +157,57 @@ class HexDoctorCommand extends Command
     }
 
     protected function buildSuggestions(DoctorReport $report): array
+    /** @return DoctorCheck[] */
+    protected function runChecks(): array
     {
-        $steps = [];
-
-        foreach ($report->tools as $tool) {
-            if (!$tool->installed && $tool->name !== 'Composer audit') {
-                $steps[] = match ($tool->name) {
-                    'Deptrac' => 'Run php artisan hex:install --composer-scripts',
-                    'PHPStan' => 'Run php artisan hex:phpstan:install',
-                    'PHPMD' => 'Run php artisan hex:phpmd:install',
-                    'Pint' => 'Run php artisan hex:pint:install',
-                    'Rector' => 'Run php artisan hex:rector:install',
-                    default => "Install {$tool->name}",
-                };
+        $checks = [];
+        $toolChecks = $this->buildChecks();
+        
+        $toolMap = [];
+        foreach ($toolChecks as $check) {
+            if (str_starts_with($check->code, 'deptrac') || str_starts_with($check->code, 'phpstan') || 
+                str_starts_with($check->code, 'phpmd') || str_starts_with($check->code, 'pint') || 
+                str_starts_with($check->code, 'rector')) {
+                $toolMap[strtolower(explode('_', $check->code)[0])] = $check->status === 'ok';
             }
         }
 
-        $missingConfigs = array_filter($report->configs, fn (ConfigStatus $c) => !$c->exists);
-        if (count($missingConfigs) > 0) {
-            $steps[] = 'Run php artisan hex:quality:install --profile=strict';
+        $checkCommands = [];
+
+        if (($toolMap['deptrac'] ?? false) && file_exists(base_path('deptrac.layers.yaml'))) {
+            $checkCommands[] = ['Deptrac (layers)', 'vendor/bin/deptrac analyse --config-file=deptrac.layers.yaml'];
+        }
+        if (($toolMap['deptrac'] ?? false) && file_exists(base_path('deptrac.modules.yaml'))) {
+            $checkCommands[] = ['Deptrac (modules)', 'vendor/bin/deptrac analyse --config-file=deptrac.modules.yaml'];
+        }
+        if (($toolMap['phpstan'] ?? false) && file_exists(base_path('phpstan.neon.dist'))) {
+            $checkCommands[] = ['PHPStan', 'vendor/bin/phpstan analyse --configuration=phpstan.neon.dist --memory-limit=1G'];
+        }
+        if (($toolMap['phpmd'] ?? false) && file_exists(base_path('phpmd.xml'))) {
+            $checkCommands[] = ['PHPMD', 'vendor/bin/phpmd app text phpmd.xml'];
+        }
+        if (($toolMap['pint'] ?? false)) {
+            $checkCommands[] = ['Pint', 'vendor/bin/pint --test'];
+        }
+        if (($toolMap['rector'] ?? false) && file_exists(base_path('rector.php'))) {
+            $checkCommands[] = ['Rector', 'vendor/bin/rector process --dry-run'];
         }
 
-        if (empty($steps)) {
-            $steps[] = 'Run php artisan hex:report Product';
-        }
-
-        return $steps;
-    }
-
-    /** @return CommandResult[] */
-    protected function runChecks(DoctorReport $report): array
-    {
-        $results = [];
-        $checks = [];
-
-        $toolMap = array_column($report->tools, null, 'name');
-
-        if (($toolMap['Deptrac']->installed ?? false) && file_exists(base_path('deptrac.layers.yaml'))) {
-            $checks[] = ['Deptrac (layers)', 'vendor/bin/deptrac analyse --config-file=deptrac.layers.yaml'];
-        }
-        if (($toolMap['Deptrac']->installed ?? false) && file_exists(base_path('deptrac.modules.yaml'))) {
-            $checks[] = ['Deptrac (modules)', 'vendor/bin/deptrac analyse --config-file=deptrac.modules.yaml'];
-        }
-        if (($toolMap['PHPStan']->installed ?? false) && file_exists(base_path('phpstan.neon.dist'))) {
-            $checks[] = ['PHPStan', 'vendor/bin/phpstan analyse --configuration=phpstan.neon.dist --memory-limit=1G'];
-        }
-        if (($toolMap['PHPMD']->installed ?? false) && file_exists(base_path('phpmd.xml'))) {
-            $checks[] = ['PHPMD', 'vendor/bin/phpmd app text phpmd.xml'];
-        }
-        if ($toolMap['Pint']->installed ?? false) {
-            $checks[] = ['Pint', 'vendor/bin/pint --test'];
-        }
-        if (($toolMap['Rector']->installed ?? false) && file_exists(base_path('rector.php'))) {
-            $checks[] = ['Rector', 'vendor/bin/rector process --dry-run'];
-        }
-
-        foreach ($checks as [$tool, $command]) {
+        foreach ($checkCommands as [$tool, $command]) {
             $output = '';
             $exitCode = $this->processRunner->run($command, function (string $type, string $buffer) use (&$output) {
                 $output .= $buffer;
             });
 
-            $results[] = new CommandResult($tool, $command, $exitCode, trim($output));
+            $checks[] = new DoctorCheck(
+                $exitCode === 0 ? 'ok' : 'fail',
+                'check_' . strtolower(str_replace(' ', '_', $tool)),
+                $exitCode === 0 ? "{$tool} check passed" : "{$tool} check failed",
+                null
+            );
         }
 
-        return $results;
+        return $checks;
     }
 
     protected function outputTable(DoctorReport $report): void
@@ -196,12 +216,12 @@ class HexDoctorCommand extends Command
         $this->line('<options=bold>Hex Tools Doctor</>');
         $this->line('');
 
-        $this->line('<options=bold>Tools:</>');
-        foreach ($report->tools as $tool) {
-            $status = $tool->installed ? '<fg=green>installed</>' : '<fg=yellow>missing</>';
-            $this->line("  {$this->pad($tool->name . ':')} {$status}");
-        }
-
+        $summary = $report->summary();
+        $this->line("<options=bold>Summary:</>");
+        $this->line("  Total checks: {$summary['checks']}");
+        $this->line("  <fg=green>OK:</> {$summary['ok']}");
+        $this->line("  <fg=yellow>Warnings:</> {$summary['warnings']}");
+        $this->line("  <fg=red>Failures:</> {$summary['failures']}");
         $this->line('');
         $this->line('<options=bold>Configs:</>');
         foreach ($report->configs as $config) {
@@ -232,12 +252,16 @@ class HexDoctorCommand extends Command
             }
         }
 
-        if (!empty($report->suggestions)) {
-            $this->line('');
-            $this->line('<options=bold>Recommended next steps:</>');
-            foreach (array_values($report->suggestions) as $i => $step) {
-                $this->line('  ' . ($i + 1) . '. ' . $step);
-            }
+        $this->line('<options=bold>Checks:</>');
+        foreach ($report->checks as $check) {
+            $statusColor = match ($check->status) {
+                'ok' => 'green',
+                'warn' => 'yellow',
+                'fail' => 'red',
+                default => 'blue',
+            };
+            $statusLabel = strtoupper($check->status);
+            $this->line("  [{$statusLabel}] {$check->message}");
         }
 
         $this->line('');
@@ -278,5 +302,6 @@ class HexDoctorCommand extends Command
     protected function pad(string $text, int $width = 36): string
     {
         return str_pad($text, $width);
+        $this->line(json_encode($report->toArray(), JSON_PRETTY_PRINT));
     }
 }
