@@ -1,53 +1,22 @@
 ```
-# Compiled and build artifacts
-*.pyc
-__pycache__/
-*.o
-*.obj
-dist/
-build/
-*.class
-*.so
-*.dll
-*.exe
-
 # Dependencies
 vendor/
-node_modules/
-.env
-.env.local
-*.env.*
+composer.lock
 
 # Logs and temp files
 *.log
 *.tmp
-*.swp
-*.swo
+
+# Environment
+.env
+.env.local
+*.env.*
 
 # Editors
 .vscode/
 .idea/
-*.iml
-*.ipr
-*.iws
 
-# Coverage reports
-coverage/
-htmlcov/
-.coverage
-
-# Test and cache directories
-.phpunit.result.cache
-.php_cs.cache
-*.phar
-
-# OS generated files
+# OS
 .DS_Store
 Thumbs.db
-```php
-<?php
-// No specific gitignore rules needed for this PHP file modification
-// The change only involves a source code file (ArchitectureInspector.php)
-// which should not be ignored
-?>
 ```

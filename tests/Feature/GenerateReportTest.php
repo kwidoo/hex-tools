@@ -64,3 +64,46 @@ it('outputs info message with report path', function () {
         ->assertSuccessful()
         ->expectsOutputToContain('Report generated');
 });
+
+it('generates JSON report file when --format=json is passed', function () {
+    $this->artisan('hex:report', ['--format' => 'json'])->assertSuccessful();
+
+    $path = $this->app->basePath('build/architecture/reports/architecture-report.json');
+    expect(file_exists($path))->toBeTrue();
+
+    $content = file_get_contents($path);
+    $data = json_decode($content, true);
+
+    expect($data)->toBeArray()
+        ->and($data)->toHaveKeys(['module_name', 'generated_at', 'architecture_summary', 'violations', 'dependencies', 'quality_check_summary'])
+        ->and($data['module_name'])->toBe('all')
+        ->and($data['generated_at'])->not->toBeEmpty();
+});
+
+it('generates module-specific JSON report', function () {
+    $this->artisan('hex:report', ['module' => 'Product', '--format' => 'json'])->assertSuccessful();
+
+    $path = $this->app->basePath('build/architecture/reports/product-report.json');
+    expect(file_exists($path))->toBeTrue();
+
+    $content = file_get_contents($path);
+    $data = json_decode($content, true);
+
+    expect($data['module_name'])->toBe('Product');
+});
+
+it('generates Markdown report file by default', function () {
+    $this->artisan('hex:report')->assertSuccessful();
+
+    $path = $this->app->basePath('build/architecture/reports/architecture-report.md');
+    expect(file_exists($path))->toBeTrue();
+
+    $content = file_get_contents($path);
+    expect($content)->toContain('| Tool | Status |');
+});
+
+it('fails with unsupported format', function () {
+    $this->artisan('hex:report', ['--format' => 'xml'])
+        ->assertFailed()
+        ->expectsOutputToContain("Unsupported format 'xml'");
+});

@@ -149,4 +149,14 @@ class ArchitectureReportGenerator
     {
         return dirname(__DIR__, 2) . '/stubs/' . $stub;
     }
+
+    public function getModules(): array
+    {
+        return $this->config->modules();
+    }
+
+    public function getModuleRules(): array
+    {
+        return $this->config->moduleRules();
+    }
 }
