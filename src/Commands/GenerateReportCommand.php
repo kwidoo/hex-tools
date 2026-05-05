@@ -13,7 +13,7 @@ class GenerateReportCommand extends Command
 {
     protected $signature = 'hex:report
         {module? : Optional module name}
-        {--output= : Output markdown file}
+        {--output= : Output file path}
         {--run-checks : Run tools and include results}
         {--format=markdown : markdown|json}';
 
@@ -33,29 +33,30 @@ class GenerateReportCommand extends Command
         $module = (string) $this->argument('module');
         $format = (string) $this->option('format');
 
+        if (!in_array($format, ['markdown', 'json'], true)) {
+            $this->error("Unsupported format '{$format}'. Use 'markdown' or 'json'.");
+            return self::FAILURE;
+        }
+
         $checkResults = [];
         if ($this->option('run-checks')) {
             $checkResults = $this->runChecks();
         }
 
-        $content = $this->reportGenerator->generate($module, $checkResults);
+        $outputPath = $this->resolveOutputPath($module, $format);
 
-        $outputPath = $this->resolveOutputPath($module);
+        $content = $this->generateContent($module, $checkResults, $format);
 
         $this->filesystem->ensureDirectory(dirname($outputPath));
         file_put_contents($outputPath, $content);
 
-        $relative = str_replace(base_path('/'), '', $outputPath);
+        $relative = str_replace(base_path('/') . '', '', $outputPath);
         $this->info("Report generated: {$relative}");
-
-        if ($format === 'json') {
-            $this->outputJson($module, $checkResults);
-        }
 
         return self::SUCCESS;
     }
 
-    protected function resolveOutputPath(string $module): string
+    protected function resolveOutputPath(string $module, string $format): string
     {
         if ($this->option('output')) {
             return base_path((string) $this->option('output'));
@@ -65,10 +66,43 @@ class GenerateReportCommand extends Command
 
         if ($module) {
             $slug = strtolower($module);
-            return "{$reportsDir}/{$slug}-report.md";
+            return "{$reportsDir}/{$slug}-report.{$format}";
         }
 
-        return "{$reportsDir}/architecture-report.md";
+        return "{$reportsDir}/architecture-report.{$format}";
+    }
+
+    protected function generateContent(string $module, array $checkResults, string $format): string
+    {
+        if ($format === 'json') {
+            return $this->generateJson($module, $checkResults);
+        }
+
+        return $this->reportGenerator->generate($module, $checkResults);
+    }
+
+    protected function generateJson(string $module, array $checkResults): string
+    {
+        $data = [
+            'module_name' => $module ?: 'all',
+            'generated_at' => date('Y-m-d H:i:s'),
+            'architecture_summary' => [
+                'modules' => $this->reportGenerator->getModules(),
+                'module_rules' => $this->reportGenerator->getModuleRules(),
+            ],
+            'violations' => [],
+            'dependencies' => [],
+            'quality_check_summary' => [
+                'checks_run' => count($checkResults),
+                'results' => array_map(fn (CommandResult $r) => [
+                    'tool' => $r->tool,
+                    'passed' => $r->passed(),
+                    'exit_code' => $r->exitCode,
+                ], $checkResults),
+            ],
+        ];
+
+        return json_encode($data, JSON_PRETTY_PRINT);
     }
 
     /** @return CommandResult[] */
@@ -100,20 +134,5 @@ class GenerateReportCommand extends Command
         }
 
         return $results;
-    }
-
-    protected function outputJson(string $module, array $checkResults): void
-    {
-        $data = [
-            'module' => $module ?: 'all',
-            'generated_at' => date('Y-m-d H:i:s'),
-            'checks' => array_map(fn (CommandResult $r) => [
-                'tool' => $r->tool,
-                'passed' => $r->passed(),
-                'exit_code' => $r->exitCode,
-            ], $checkResults),
-        ];
-
-        $this->line(json_encode($data, JSON_PRETTY_PRINT));
     }
 }
