@@ -18,4 +18,14 @@ final class ToolAvailability
     {
         return file_exists(base_path('vendor/bin/phpmd'));
     }
+
+    public function hasPint(): bool
+    {
+        return file_exists(base_path('vendor/bin/pint'));
+    }
+
+    public function hasRector(): bool
+    {
+        return file_exists(base_path('vendor/bin/rector'));
+    }
 }

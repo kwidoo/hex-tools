@@ -1,0 +1,84 @@
+# Code Formatting with Pint
+
+## What Pint Does
+
+Laravel Pint is an opinionated PHP code style fixer built on top of PHP-CS-Fixer. It enforces consistent formatting across the codebase.
+
+In this workflow:
+
+| Tool | Purpose |
+|---|---|
+| **Pint** | Code formatting — whitespace, brackets, import order |
+| **PHPStan** | Type correctness |
+| **PHPMD** | Code smells |
+| **Deptrac** | Architecture boundaries |
+
+Pint does not catch logic errors, type issues, or architectural violations.
+
+## Preset
+
+This project uses the `{{ preset }}` preset with additional rules:
+
+- `declare_strict_types` — enforces `declare(strict_types=1)` in all files
+- `ordered_imports` — sorts `use` statements alphabetically
+- `no_unused_imports` — removes unused `use` statements
+
+## How to Run
+
+Check for formatting issues (CI-safe, no writes):
+
+```bash
+composer fmt:test
+```
+
+Apply formatting fixes:
+
+```bash
+composer fmt
+```
+
+Direct commands:
+
+```bash
+vendor/bin/pint --test
+vendor/bin/pint
+```
+
+## Configuration
+
+Edit `pint.json` to adjust rules or preset.
+
+Available presets: `laravel`, `psr2`, `symfony`.
+
+To disable a rule:
+
+```json
+{
+  "preset": "laravel",
+  "rules": {
+    "declare_strict_types": false
+  }
+}
+```
+
+## Artisan Commands
+
+```bash
+# Install pint.json and docs
+php artisan hex:pint:install
+
+# Regenerate pint.json
+php artisan hex:pint:generate --force
+```
+
+## CI Integration
+
+Pint runs in `--test` mode in CI (no changes written). If formatting issues exist, the build fails.
+
+To fix locally before pushing:
+
+```bash
+composer fmt
+git add -A
+git commit -m "style: apply pint formatting"
+```

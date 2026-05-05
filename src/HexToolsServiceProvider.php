@@ -4,6 +4,8 @@ namespace Kwidoo\HexTools;
 
 use Illuminate\Support\ServiceProvider;
 use Kwidoo\HexTools\Commands\CreateAdrCommand;
+use Kwidoo\HexTools\Commands\GenerateAgentContextCommand;
+use Kwidoo\HexTools\Commands\GenerateCiCommand;
 use Kwidoo\HexTools\Commands\GenerateDocsCommand;
 use Kwidoo\HexTools\Commands\GenerateLayersDeptracCommand;
 use Kwidoo\HexTools\Commands\GenerateMermaidCommand;
@@ -12,14 +14,24 @@ use Kwidoo\HexTools\Commands\GeneratePhpMdBaselineCommand;
 use Kwidoo\HexTools\Commands\GeneratePhpMdCommand;
 use Kwidoo\HexTools\Commands\GeneratePhpStanBaselineCommand;
 use Kwidoo\HexTools\Commands\GeneratePhpStanCommand;
+use Kwidoo\HexTools\Commands\GeneratePintCommand;
+use Kwidoo\HexTools\Commands\GenerateRectorCommand;
+use Kwidoo\HexTools\Commands\GenerateReportCommand;
+use Kwidoo\HexTools\Commands\HexDoctorCommand;
 use Kwidoo\HexTools\Commands\HexMapCommand;
 use Kwidoo\HexTools\Commands\InstallPhpMdCommand;
 use Kwidoo\HexTools\Commands\RunPhpMdCommand;
 use Kwidoo\HexTools\Commands\InitModuleCommand;
 use Kwidoo\HexTools\Commands\InstallHexToolsCommand;
 use Kwidoo\HexTools\Commands\InstallPhpStanCommand;
+use Kwidoo\HexTools\Commands\InstallPintCommand;
+use Kwidoo\HexTools\Commands\InstallQualityCommand;
+use Kwidoo\HexTools\Commands\InstallRectorCommand;
 use Kwidoo\HexTools\Config\HexToolsConfig;
 use Kwidoo\HexTools\Generators\AdrGenerator;
+use Kwidoo\HexTools\Generators\AgentContextGenerator;
+use Kwidoo\HexTools\Generators\ArchitectureReportGenerator;
+use Kwidoo\HexTools\Generators\CiGenerator;
 use Kwidoo\HexTools\Generators\ComposerScriptsInstaller;
 use Kwidoo\HexTools\Generators\DeptracLayersGenerator;
 use Kwidoo\HexTools\Generators\DeptracModulesGenerator;
@@ -31,6 +43,11 @@ use Kwidoo\HexTools\Generators\PhpMdDocsGenerator;
 use Kwidoo\HexTools\Generators\PhpMdRulesetGenerator;
 use Kwidoo\HexTools\Generators\PhpStanComposerScriptsInstaller;
 use Kwidoo\HexTools\Generators\PhpStanConfigGenerator;
+use Kwidoo\HexTools\Generators\PintComposerScriptsInstaller;
+use Kwidoo\HexTools\Generators\PintConfigGenerator;
+use Kwidoo\HexTools\Generators\QualityComposerScriptsInstaller;
+use Kwidoo\HexTools\Generators\RectorComposerScriptsInstaller;
+use Kwidoo\HexTools\Generators\RectorConfigGenerator;
 use Kwidoo\HexTools\Generators\StaticAnalysisDocsGenerator;
 use Kwidoo\HexTools\Scanners\ClassNameResolver;
 use Kwidoo\HexTools\Scanners\ModuleScanner;
@@ -56,6 +73,9 @@ class HexToolsServiceProvider extends ServiceProvider
         $this->app->singleton(ComposerScriptsInstaller::class);
         $this->app->singleton(PhpStanComposerScriptsInstaller::class);
         $this->app->singleton(PhpMdComposerScriptsInstaller::class);
+        $this->app->singleton(PintComposerScriptsInstaller::class);
+        $this->app->singleton(RectorComposerScriptsInstaller::class);
+        $this->app->singleton(QualityComposerScriptsInstaller::class);
 
         $this->app->singleton(ClassNameResolver::class, function ($app) {
             $config = $app->make(HexToolsConfig::class);
@@ -136,6 +156,42 @@ class HexToolsServiceProvider extends ServiceProvider
                 $app->make(StubRenderer::class)
             );
         });
+
+        $this->app->singleton(PintConfigGenerator::class, function ($app) {
+            return new PintConfigGenerator(
+                $app->make(HexToolsConfig::class),
+                $app->make(StubRenderer::class)
+            );
+        });
+
+        $this->app->singleton(RectorConfigGenerator::class, function ($app) {
+            return new RectorConfigGenerator(
+                $app->make(HexToolsConfig::class),
+                $app->make(StubRenderer::class)
+            );
+        });
+
+        $this->app->singleton(AgentContextGenerator::class, function ($app) {
+            return new AgentContextGenerator(
+                $app->make(HexToolsConfig::class),
+                $app->make(StubRenderer::class),
+                $app->make(ToolAvailability::class)
+            );
+        });
+
+        $this->app->singleton(ArchitectureReportGenerator::class, function ($app) {
+            return new ArchitectureReportGenerator(
+                $app->make(HexToolsConfig::class),
+                $app->make(StubRenderer::class),
+                $app->make(ToolAvailability::class)
+            );
+        });
+
+        $this->app->singleton(CiGenerator::class, function ($app) {
+            return new CiGenerator(
+                $app->make(StubRenderer::class)
+            );
+        });
     }
 
     public function boot(): void
@@ -161,6 +217,15 @@ class HexToolsServiceProvider extends ServiceProvider
                 GeneratePhpMdCommand::class,
                 GeneratePhpMdBaselineCommand::class,
                 RunPhpMdCommand::class,
+                HexDoctorCommand::class,
+                InstallQualityCommand::class,
+                InstallPintCommand::class,
+                GeneratePintCommand::class,
+                InstallRectorCommand::class,
+                GenerateRectorCommand::class,
+                GenerateAgentContextCommand::class,
+                GenerateReportCommand::class,
+                GenerateCiCommand::class,
             ]);
         }
     }

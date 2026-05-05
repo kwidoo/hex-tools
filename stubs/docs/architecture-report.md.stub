@@ -1,0 +1,24 @@
+# Architecture Report
+
+**Generated at:** {{ generated_at }}
+**Module:** {{ module }}
+
+---
+
+## Tool Availability
+
+{{ tool_statuses }}
+
+## Config Availability
+
+{{ config_statuses }}
+
+## Module Map
+
+{{ module_map }}
+
+## Suggested Next Steps
+
+{{ suggested_steps }}
+
+{{ check_results }}

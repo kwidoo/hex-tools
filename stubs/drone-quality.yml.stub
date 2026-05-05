@@ -1,0 +1,45 @@
+kind: pipeline
+type: docker
+name: quality
+
+steps:
+  - name: install
+    image: composer:2
+    commands:
+      - composer validate --strict
+      - composer install --no-interaction --prefer-dist --no-progress
+
+  - name: formatting
+    image: php:8.2-cli
+    commands:
+      - composer fmt:test
+
+  - name: static-analysis
+    image: php:8.2-cli
+    commands:
+      - composer stan
+
+  - name: architecture-layers
+    image: php:8.2-cli
+    commands:
+      - composer hex:layers
+
+  - name: architecture-modules
+    image: php:8.2-cli
+    commands:
+      - composer hex:modules
+
+  - name: code-quality
+    image: php:8.2-cli
+    commands:
+      - composer md
+
+  - name: rector-dry-run
+    image: php:8.2-cli
+    commands:
+      - composer rector:dry
+
+  - name: security-audit
+    image: php:8.2-cli
+    commands:
+      - composer security:audit

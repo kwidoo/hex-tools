@@ -1,0 +1,86 @@
+# Automated Refactoring with Rector
+
+## What Rector Does
+
+Rector is an automated refactoring tool. It applies code quality rules, removes dead code, improves type declarations, and enforces coding style consistently.
+
+In this workflow:
+
+| Tool | Purpose |
+|---|---|
+| **Rector** | Automated refactoring — dead code, type declarations, coding style |
+| **Pint** | Code formatting |
+| **PHPStan** | Type correctness checking |
+| **PHPMD** | Code smell detection |
+
+Rector changes code. Always review its output before committing.
+
+## Configured Rules
+
+This project uses Rector's prepared sets:
+
+- `deadCode` — removes dead code, unused variables, unreachable code
+- `codeQuality` — improves code quality patterns
+- `codingStyle` — enforces consistent coding style
+- `typeDeclarations` — adds missing type declarations
+- `privatization` — makes methods/properties private where possible
+
+## Default Paths
+
+```
+{{ rector_paths }}
+```
+
+## Skipped Paths
+
+```
+{{ rector_skip }}
+```
+
+## How to Run
+
+Preview changes without writing (dry run):
+
+```bash
+composer rector:dry
+```
+
+Apply changes:
+
+```bash
+composer rector
+```
+
+Direct commands:
+
+```bash
+vendor/bin/rector process --dry-run
+vendor/bin/rector process
+```
+
+## Guard Rails
+
+- Always run `--dry-run` first and review the diff.
+- Do not run Rector in CI in write mode — use `--dry-run` only.
+- If Rector proposes a change you disagree with, add the file/rule to the skip list in `rector.php`.
+- Commit Rector changes separately from feature changes.
+
+## Suppressing a Rule
+
+To skip a specific rule for a file or directory, edit `rector.php`:
+
+```php
+->withSkip([
+    SomeRule::class => [__DIR__ . '/app/Exceptions'],
+])
+```
+
+## Artisan Commands
+
+```bash
+# Install rector.php and docs
+php artisan hex:rector:install
+
+# Regenerate rector.php
+php artisan hex:rector:generate --force
+```

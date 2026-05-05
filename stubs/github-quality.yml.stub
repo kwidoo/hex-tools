@@ -1,0 +1,47 @@
+name: Quality
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+
+jobs:
+  quality:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.2'
+          tools: composer:v2
+          coverage: none
+
+      - name: Validate composer.json
+        run: composer validate --strict
+
+      - name: Install dependencies
+        run: composer install --no-interaction --prefer-dist --no-progress
+
+      - name: Check formatting
+        run: composer fmt:test
+
+      - name: Static analysis
+        run: composer stan
+
+      - name: Architecture — layers
+        run: composer hex:layers
+
+      - name: Architecture — modules
+        run: composer hex:modules
+
+      - name: Code quality
+        run: composer md
+
+      - name: Refactoring suggestions (dry run)
+        run: composer rector:dry
+
+      - name: Security audit
+        run: composer security:audit

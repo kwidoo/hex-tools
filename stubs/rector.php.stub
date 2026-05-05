@@ -1,0 +1,21 @@
+<?php
+
+declare(strict_types=1);
+
+use Rector\Config\RectorConfig;
+
+return RectorConfig::configure()
+    ->withPaths([
+{{ rector_paths }}
+    ])
+    ->withSkip([
+{{ rector_skip }}
+    ])
+    ->withImportNames()
+    ->withPreparedSets(
+        deadCode: true,
+        codeQuality: true,
+        codingStyle: true,
+        typeDeclarations: true,
+        privatization: true,
+    );

@@ -1,0 +1,66 @@
+# CI Quality Pipeline
+
+## Overview
+
+This project uses an automated quality pipeline to enforce architecture, type safety, code style, and security checks on every push and pull request.
+
+## Pipeline Steps
+
+| Step | Command | Blocks merge |
+|---|---|---|
+| Formatting | `composer fmt:test` | Yes |
+| Static analysis | `composer stan` | Yes |
+| Architecture layers | `composer hex:layers` | Yes |
+| Architecture modules | `composer hex:modules` | Yes |
+| Code quality | `composer md` | Yes |
+| Refactoring check | `composer rector:dry` | Yes |
+| Security audit | `composer security:audit` | Yes |
+
+## Running Locally
+
+Run the full quality pipeline locally before pushing:
+
+```bash
+composer quality
+```
+
+Run a lighter subset (no PHPMD, no Rector):
+
+```bash
+composer quality:soft
+```
+
+## Generating a CI File
+
+```bash
+# GitHub Actions
+php artisan hex:ci:generate --provider=github
+
+# Drone CI
+php artisan hex:ci:generate --provider=drone
+```
+
+## Fixing Failures
+
+| Failure | Fix |
+|---|---|
+| `fmt:test` fails | Run `composer fmt` to fix formatting |
+| `stan` fails | Fix type errors reported by PHPStan |
+| `hex:layers` fails | Fix architecture layer violations |
+| `hex:modules` fails | Fix module dependency violations |
+| `md` fails | Fix PHPMD code quality issues or update baseline |
+| `rector:dry` fails | Review and apply Rector suggestions |
+| `security:audit` fails | Update vulnerable packages |
+
+## Adding Steps
+
+Edit the generated CI file or extend the profile in `config/hex-tools.php`.
+
+## Reports
+
+Generate a local architecture report:
+
+```bash
+php artisan hex:report
+php artisan hex:report --run-checks
+```
