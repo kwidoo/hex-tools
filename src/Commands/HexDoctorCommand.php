@@ -5,6 +5,7 @@ namespace Kwidoo\HexTools\Commands;
 use Illuminate\Console\Command;
 use Kwidoo\HexTools\Reports\CommandResult;
 use Kwidoo\HexTools\Reports\ConfigStatus;
+use Kwidoo\HexTools\Reports\ComposerScriptStatus;
 use Kwidoo\HexTools\Reports\DoctorReport;
 use Kwidoo\HexTools\Reports\ToolStatus;
 use Kwidoo\HexTools\Support\ProcessRunner;
@@ -18,6 +19,14 @@ class HexDoctorCommand extends Command
         {--run-checks : Run external quality checks when available}';
 
     protected $description = 'Check the architecture tooling state of the project.';
+
+    /** @var string[] */
+    protected array $expectedComposerScripts = [
+        'hex:layers',
+        'hex:modules',
+        'stan',
+        'md',
+    ];
 
     public function __construct(
         protected ToolAvailability $toolAvailability,
@@ -69,6 +78,8 @@ class HexDoctorCommand extends Command
             $report->configs[] = new ConfigStatus($file, $file, file_exists(base_path($file)));
         }
 
+        $report->composerScripts = $this->checkComposerScripts();
+
         $docs = [
             'docs/architecture/deptrac.md',
             'docs/architecture/static-analysis.md',
@@ -92,6 +103,23 @@ class HexDoctorCommand extends Command
         $report->suggestions = $this->buildSuggestions($report);
 
         return $report;
+    }
+
+    /** @return ComposerScriptStatus[] */
+    protected function checkComposerScripts(): array
+    {
+        $composerPath = base_path('composer.json');
+        $composerContent = file_exists($composerPath) ? file_get_contents($composerPath) : '';
+        $composer = json_decode($composerContent, true) ?? [];
+        $scripts = is_array($composer) ? ($composer['scripts'] ?? []) : [];
+
+        $result = [];
+        foreach ($this->expectedComposerScripts as $scriptName) {
+            $exists = isset($scripts[$scriptName]);
+            $result[] = new ComposerScriptStatus($scriptName, $exists);
+        }
+
+        return $result;
     }
 
     protected function buildSuggestions(DoctorReport $report): array
@@ -182,6 +210,13 @@ class HexDoctorCommand extends Command
         }
 
         $this->line('');
+        $this->line('<options=bold>Composer scripts:</>');
+        foreach ($report->composerScripts as $script) {
+            $status = $script->exists ? '<fg=green>✓</>' : '<fg=red>✗</>';
+            $this->line("  {$status} {$script->name}");
+        }
+
+        $this->line('');
         $this->line('<options=bold>Architecture docs:</>');
         foreach ($report->docs as $doc) {
             $status = $doc->exists ? '<fg=green>exists</>' : '<fg=yellow>missing</>';
@@ -220,6 +255,10 @@ class HexDoctorCommand extends Command
                 'name' => $c->name,
                 'exists' => $c->exists,
             ], $report->configs),
+            'composer_scripts' => array_map(fn (ComposerScriptStatus $s) => [
+                'name' => $s->name,
+                'exists' => $s->exists,
+            ], $report->composerScripts),
             'docs' => array_map(fn (ConfigStatus $c) => [
                 'name' => $c->name,
                 'exists' => $c->exists,

@@ -14,7 +14,8 @@ class InstallPhpMdCommand extends Command
     protected $signature = 'hex:phpmd:install
         {--force : Overwrite existing PHPMD config files}
         {--composer-scripts : Update root composer.json with PHPMD scripts}
-        {--with-baseline : Include baseline command/script references}';
+        {--with-baseline : Include baseline command/script references}
+        {--per-layer : Generate separate rulesets for main, domain, and application layers}';
 
     protected $description = 'Install PHPMD config and optional composer scripts.';
 
@@ -40,8 +41,14 @@ class InstallPhpMdCommand extends Command
         }
 
         $force = (bool) $this->option('force');
+        $perLayer = (bool) $this->option('per-layer');
 
-        $this->generateFile(base_path('phpmd.xml'), $this->generator->generate(), $force);
+        if ($perLayer) {
+            $this->generatePerLayerRulesets($force);
+        } else {
+            $this->generateFile(base_path('phpmd.xml'), $this->generator->generate(), $force);
+        }
+
         $this->generateDocs($force);
 
         if ($this->option('composer-scripts')) {
@@ -53,6 +60,13 @@ class InstallPhpMdCommand extends Command
         $this->info('PHPMD config installed successfully.');
 
         return self::SUCCESS;
+    }
+
+    protected function generatePerLayerRulesets(bool $force): void
+    {
+        $this->generateFile(base_path('phpmd.xml'), $this->generator->generateForLayer('main'), $force);
+        $this->generateFile(base_path('phpmd-domain.xml'), $this->generator->generateForLayer('domain'), $force);
+        $this->generateFile(base_path('phpmd-application.xml'), $this->generator->generateForLayer('application'), $force);
     }
 
     protected function generateFile(string $path, string $content, bool $force): void

@@ -25,6 +25,8 @@ beforeEach(function () {
 
 afterEach(function () {
     @unlink($this->app->basePath('phpmd.xml'));
+    @unlink($this->app->basePath('phpmd-domain.xml'));
+    @unlink($this->app->basePath('phpmd-application.xml'));
     @unlink($this->app->basePath('docs/architecture/phpmd.md'));
 });
 
@@ -56,6 +58,45 @@ it('overwrites existing phpmd.xml with --force', function () {
     $this->artisan('hex:phpmd:install', ['--force' => true])->assertSuccessful();
 
     expect(file_get_contents($path))->not->toBe('original');
+});
+
+it('generates per-layer rulesets with --per-layer option', function () {
+    $this->artisan('hex:phpmd:install', ['--per-layer' => true])->assertSuccessful();
+
+    expect(file_exists($this->app->basePath('phpmd.xml')))->toBeTrue()
+        ->and(file_exists($this->app->basePath('phpmd-domain.xml')))->toBeTrue()
+        ->and(file_exists($this->app->basePath('phpmd-application.xml')))->toBeTrue();
+});
+
+it('generates main ruleset with correct rules', function () {
+    $this->artisan('hex:phpmd:install', ['--per-layer' => true])->assertSuccessful();
+
+    $content = file_get_contents($this->app->basePath('phpmd.xml'));
+    
+    expect($content)->toContain('Hex Tools PHPMD Rules (Main)')
+        ->and($content)->toContain('rulesets/codesize.xml')
+        ->and($content)->toContain('rulesets/design.xml')
+        ->and($content)->toContain('rulesets/naming.xml')
+        ->and($content)->toContain('rulesets/unusedcode.xml');
+});
+
+it('generates domain ruleset with cleancode rule', function () {
+    $this->artisan('hex:phpmd:install', ['--per-layer' => true])->assertSuccessful();
+
+    $content = file_get_contents($this->app->basePath('phpmd-domain.xml'));
+    
+    expect($content)->toContain('Hex Tools PHPMD Rules (Domain)')
+        ->and($content)->toContain('PHPMD ruleset for Domain layer')
+        ->and($content)->toContain('rulesets/cleancode.xml');
+});
+
+it('generates application ruleset with correct description', function () {
+    $this->artisan('hex:phpmd:install', ['--per-layer' => true])->assertSuccessful();
+
+    $content = file_get_contents($this->app->basePath('phpmd-application.xml'));
+    
+    expect($content)->toContain('Hex Tools PHPMD Rules (Application)')
+        ->and($content)->toContain('PHPMD ruleset for Application layer');
 });
 
 it('does not modify composer.json without --composer-scripts', function () {
@@ -115,4 +156,14 @@ it('generated phpmd.xml contains valid xml', function () {
     $xml = simplexml_load_string($content);
 
     expect($xml)->not->toBeFalse();
+});
+
+it('generated per-layer rulesets contain valid xml', function () {
+    $this->artisan('hex:phpmd:install', ['--per-layer' => true])->assertSuccessful();
+
+    foreach (['phpmd.xml', 'phpmd-domain.xml', 'phpmd-application.xml'] as $file) {
+        $content = file_get_contents($this->app->basePath($file));
+        $xml = simplexml_load_string($content);
+        expect($xml)->not->toBeFalse()->withMessage("{$file} is not valid XML");
+    }
 });
