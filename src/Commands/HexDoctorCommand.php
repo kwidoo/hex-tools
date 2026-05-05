@@ -13,9 +13,9 @@ use Kwidoo\HexTools\Support\ToolAvailability;
 class HexDoctorCommand extends Command
 {
     protected $signature = 'hex:doctor
-        {--json : Output JSON instead of table}
-        {--strict : Return non-zero exit code if important tools/configs are missing}
-        {--run-checks : Run available quality tools and summarize results}';
+        {--format=table : Output format: table or json}
+        {--strict : Exit with failure code when warnings/errors are found}
+        {--run-checks : Run external quality checks when available}';
 
     protected $description = 'Check the architecture tooling state of the project.';
 
@@ -34,7 +34,7 @@ class HexDoctorCommand extends Command
             $report->results = $this->runChecks($report);
         }
 
-        if ($this->option('json')) {
+        if ($this->option('format') === 'json') {
             $this->outputJson($report);
         } else {
             $this->outputTable($report);
