@@ -1,127 +1,47 @@
 ```
+# Compiled and build artifacts
+*.pyc
+__pycache__/
+*.o
+*.obj
+dist/
+build/
+*.class
+*.so
+*.dll
+*.exe
+
 # Dependencies
 vendor/
-
-# Logs and temp files
-*.log
-*.tmp
-
-# Environment
+node_modules/
 .env
 .env.local
 *.env.*
 
-# Editor/IDE
-.vscode/
-.idea/
-*.swp
-*.swo
-
-# Environment
-.env
-.env.local
-.env.*
-
-# Logs
+# Logs and temp files
 *.log
-
-# Temporary files
 *.tmp
 *.swp
 *.swo
 
-# IDE
+# Editors
 .vscode/
 .idea/
+*.iml
+*.ipr
+*.iws
 
-# OS
-.DS_Store
-Thumbs.db
-
-# Build artifacts
-dist/
-build/
-target/
-*.o
-*.obj
-*.out
-
-# Python
-__pycache__/
-*.pyc
-*.pyo
-*.pyd
-.Python
-*.so
-
-# Node.js
-node_modules/
-
-# Java
-*.class
-*.jar
-*.war
-*.ear
-*.nar
-.META-INF/
-
-# C/C++
-*.a
-*.lib
-*.dll
-*.so
-*.dylib
-*.exe
-
-# Ruby
-*.gem
-.bundle/
-Gemfile.lock
-
-# Go
-*.exe
-*.test
-*.prof
-*.out
-
-# PHP Composer
-composer.lock
-vendor/
-
-# Coverage
+# Coverage reports
 coverage/
 htmlcov/
 .coverage
-*.gcov
-*.lcov
 
-# Testing
-*.pytest_cache/
-.mypy_cache/
-.hypothesis/
+# Test and cache directories
+.phpunit.result.cache
+.php_cs.cache
+*.phar
 
-# Archives
-*.zip
-*.gz
-*.tar
-*.tgz
-*.bz2
-*.xz
-*.7z
-*.rar
-*.zst
-*.lz4
-*.lzh
-*.cab
-*.arj
-*.rpm
-*.deb
-*.Z
-*.lz
-*.lzo
-*.tar.gz
-*.tar.bz2
-*.tar.xz
-*.tar.zst
-composer.lock
+# OS generated files
+.DS_Store
+Thumbs.db
 ```

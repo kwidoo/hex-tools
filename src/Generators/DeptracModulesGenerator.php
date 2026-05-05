@@ -19,7 +19,7 @@ class DeptracModulesGenerator
             'deptrac' => [
                 'paths' => ['app'],
                 'layers' => $this->buildModuleLayers($modules, $collectorPatterns),
-                'ruleset' => $this->buildModuleRuleset($moduleRules),
+                'ruleset' => $this->buildModuleRuleset($moduleRules, $modules),
             ],
         ];
 
@@ -49,12 +49,16 @@ class DeptracModulesGenerator
         return $result;
     }
 
-    protected function buildModuleRuleset(array $moduleRules): array
+    protected function buildModuleRuleset(array $moduleRules, array $modules): array
     {
         $ruleset = [];
 
-        foreach ($moduleRules as $module => $allowed) {
-            $dependencies = array_values(array_filter($allowed, fn ($dep) => $dep !== $module));
+        foreach ($modules as $module) {
+            $allowed = $moduleRules[$module] ?? [$module];
+            $dependencies = array_values(array_filter(
+                $allowed,
+                fn (string $dependency): bool => $dependency !== $module
+            ));
             $ruleset[$module] = !empty($dependencies) ? $dependencies : null;
         }
 
