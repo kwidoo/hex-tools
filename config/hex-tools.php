@@ -60,7 +60,15 @@ return [
         'http_controllers' => 'App\\\\Http\\\\Controllers\\\\.*{module}.*',
         'http_requests' => 'App\\\\Http\\\\Requests\\\\.*{module}.*',
         'http_resources' => 'App\\\\Http\\\\Resources\\\\.*{module}.*',
-        'models' => 'App\\\\Models\\\\{module}',
+        'models' => 'App\\\\Models\\\\{module}.*',
+        /*
+         * Models are matched using a prefix strategy.
+         * For module "Product", this matches:
+         * - App\Models\Product
+         * - App\Models\ProductVariant
+         * - App\Models\ProductImage
+         * The pattern uses {module}.* to match the module name and any suffix.
+         */
     ],
 
     'phpmd' => [

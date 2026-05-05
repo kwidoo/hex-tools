@@ -72,3 +72,38 @@ it('returns empty layers when directories do not exist', function () {
 
     expect($result)->toBeEmpty();
 });
+
+it('matches models with prefix pattern', function () {
+    $appPath = sys_get_temp_dir() . '/hex-scan-' . uniqid();
+    mkdir($appPath, 0755, true);
+
+    $modelsDir = $appPath . '/Models';
+    if (!is_dir($modelsDir)) {
+        mkdir($modelsDir, 0755, true);
+    }
+
+    // Create model files
+    file_put_contents($modelsDir . '/Product.php', '<?php namespace App\Models; class Product {}');
+    file_put_contents($modelsDir . '/ProductVariant.php', '<?php namespace App\Models; class ProductVariant {}');
+    file_put_contents($modelsDir . '/ProductImage.php', '<?php namespace App\Models; class ProductImage {}');
+    file_put_contents($modelsDir . '/Order.php', '<?php namespace App\Models; class Order {}');
+
+    $config = new HexToolsConfig([
+        'namespace' => 'App',
+        'paths' => ['app' => $appPath],
+        'modules' => ['Product', 'Order'],
+        'module_rules' => [],
+    ]);
+    $filesystem = new Filesystem();
+    $resolver = new ClassNameResolver($appPath, 'App');
+    $scanner = new ModuleScanner($config, $filesystem, $resolver);
+
+    $result = $scanner->scan('Product');
+
+    expect($result['Models'])->toContain('App\\Models\\Product')
+        ->and($result['Models'])->toContain('App\\Models\\ProductVariant')
+        ->and($result['Models'])->toContain('App\\Models\\ProductImage')
+        ->and($result['Models'])->not->toContain('App\\Models\\Order');
+
+    exec('rm -rf ' . escapeshellarg($appPath));
+});

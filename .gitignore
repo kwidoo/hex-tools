@@ -1,3 +1,49 @@
+```
+# Compiled and build artifacts
+*.pyc
+__pycache__/
+*.o
+*.obj
+dist/
+build/
+*.class
+*.so
+*.dll
+*.exe
+
+# Dependencies
+vendor/
+node_modules/
+.env
+.env.local
+*.env.*
+
+# Logs and temp files
+*.log
+*.tmp
+*.swp
+*.swo
+
+# Editors
+.vscode/
+.idea/
+*.iml
+*.ipr
+*.iws
+
+# Coverage reports
+coverage/
+htmlcov/
+.coverage
+
+# Test and cache directories
+.phpunit.result.cache
+.php_cs.cache
+*.phar
+
+# OS generated files
+.DS_Store
+Thumbs.db
 ```php
 <?php
 // No specific gitignore rules needed for this PHP file modification

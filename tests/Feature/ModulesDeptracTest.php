@@ -99,3 +99,57 @@ it('does not crash when modules is empty', function () {
 
     unlink($output);
 });
+
+it('includes all modules in ruleset even without explicit module_rules', function () {
+    config()->set('hex-tools.modules', ['Product', 'Order', 'Shared']);
+    config()->set('hex-tools.module_rules', [
+        'Product' => ['Product', 'Shared'],
+    ]);
+
+    $this->app->forgetInstance(\Kwidoo\HexTools\Config\HexToolsConfig::class);
+    $this->app->forgetInstance(\Kwidoo\HexTools\Generators\DeptracModulesGenerator::class);
+
+    $output = $this->app->basePath('deptrac.modules.yaml');
+    @unlink($output);
+
+    $this->artisan('hex:deptrac:modules')->assertSuccessful();
+
+    $parsed = Yaml::parseFile($output);
+    $ruleset = $parsed['deptrac']['ruleset'];
+
+    expect(array_keys($ruleset))->toContain('Product')
+        ->and($ruleset)->toContainKey('Order')
+        ->and($ruleset)->toContainKey('Shared');
+
+    // Product should have Shared as dependency (not itself)
+    expect($ruleset['Product'])->toContain('Shared')
+        ->and($ruleset['Product'])->not->toContain('Product');
+
+    // Order and Shared should have null (no external dependencies)
+    expect($ruleset['Order'])->toBeNull()
+        ->and($ruleset['Shared'])->toBeNull();
+
+    unlink($output);
+});
+
+it('does not emit self-dependency as external dependency', function () {
+    config()->set('hex-tools.modules', ['Product']);
+    config()->set('hex-tools.module_rules', [
+        'Product' => ['Product'],
+    ]);
+
+    $this->app->forgetInstance(\Kwidoo\HexTools\Config\HexToolsConfig::class);
+    $this->app->forgetInstance(\Kwidoo\HexTools\Generators\DeptracModulesGenerator::class);
+
+    $output = $this->app->basePath('deptrac.modules.yaml');
+    @unlink($output);
+
+    $this->artisan('hex:deptrac:modules')->assertSuccessful();
+
+    $parsed = Yaml::parseFile($output);
+    $ruleset = $parsed['deptrac']['ruleset'];
+
+    expect($ruleset['Product'])->toBeNull();
+
+    unlink($output);
+});
