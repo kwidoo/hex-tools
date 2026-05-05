@@ -8,12 +8,8 @@ it('runs successfully and outputs tool statuses', function () {
     $this->artisan('hex:doctor')->assertSuccessful();
 });
 
-it('outputs JSON when --json flag is passed', function () {
-    $output = $this->artisan('hex:doctor', ['--json' => true])
-        ->assertSuccessful()
-        ->execute();
-
-    $this->artisan('hex:doctor', ['--json' => true])
+it('outputs JSON when --format=json flag is passed', function () {
+    $this->artisan('hex:doctor', ['--format' => 'json'])
         ->assertSuccessful()
         ->expectsOutputToContain('"tools"');
 });
@@ -87,4 +83,16 @@ it('returns success with --strict when all important items exist', function () {
 it('skips unavailable tools during --run-checks', function () {
     $this->artisan('hex:doctor', ['--run-checks' => true])
         ->assertSuccessful();
+});
+
+it('outputs table format when --format=table flag is passed', function () {
+    $this->artisan('hex:doctor', ['--format' => 'table'])
+        ->assertSuccessful()
+        ->expectsOutputToContain('Hex Tools Doctor');
+});
+
+it('has only one hex:doctor command registered', function () {
+    $commands = $this->app->make(\Illuminate\Console\Application::class)->all();
+    $doctorCommands = array_filter($commands, fn ($command) => $command->getName() === 'hex:doctor');
+    expect(count($doctorCommands))->toBe(1);
 });

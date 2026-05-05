@@ -13,7 +13,6 @@ use Kwidoo\HexTools\Commands\BaselineCommand;
 use Kwidoo\HexTools\Commands\CreateAdrCommand;
 use Kwidoo\HexTools\Commands\GenerateAgentContextCommand;
 use Kwidoo\HexTools\Commands\GenerateCiCommand;
-use Kwidoo\HexTools\Commands\DoctorCommand;
 use Kwidoo\HexTools\Commands\DocsCommand;
 use Kwidoo\HexTools\Commands\ExplainCommand;
 use Kwidoo\HexTools\Commands\GenerateDocsCommand;
@@ -246,7 +245,6 @@ class HexToolsServiceProvider extends ServiceProvider
                 GenerateReportCommand::class,
                 GenerateCiCommand::class,
                 InspectCommand::class,
-                DoctorCommand::class,
                 DocsCommand::class,
                 BaselineCommand::class,
                 ExplainCommand::class,
