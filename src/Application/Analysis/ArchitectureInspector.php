@@ -85,6 +85,13 @@ class ArchitectureInspector
             $issues[] = new ArchitectureIssue('warn', 'missing_module_tests', "{$module} module tests were not detected", null, $module, null, $module);
         }
 
+        $outgoing = $this->outgoingDependencies($module, $files);
+        foreach ($outgoing as $dependency) {
+            foreach ($this->forbiddenModuleDependencies($module, $dependency, $files) as $issue) {
+                $issues[] = $issue;
+            }
+        }
+
         foreach ($files as $file) {
             $layer = $fileLayers[$file] ?? null;
             $relative = $this->sourceScanner->relativePath($file);
@@ -186,6 +193,42 @@ class ArchitectureInspector
         return $issues;
     }
 
+    /** @param array<string> $files @return array<ArchitectureIssue> */
+    protected function forbiddenModuleDependencies(string $module, string $dependency, array $files): array
+    {
+        $issues = [];
+
+        if ($module === $dependency) {
+            return $issues;
+        }
+
+        $allowed = $this->config->moduleRules()[$module] ?? [$module];
+
+        if (!in_array($dependency, $allowed, true)) {
+            $file = null;
+            foreach ($files as $f) {
+                foreach ($this->sourceScanner->imports($f) as $import) {
+                    if (preg_match('/\\\\' . preg_quote($dependency, '/') . '(\\\\|$)/', $import)) {
+                        $file = $this->sourceScanner->relativePath($f);
+                        break 2;
+                    }
+                }
+            }
+
+            $issues[] = new ArchitectureIssue(
+                'fail',
+                'module_depends_on_forbidden_module',
+                "{$module} depends on forbidden module {$dependency}",
+                $file,
+                $module,
+                null,
+                $dependency
+            );
+        }
+
+        return $issues;
+    }
+
     /** @param array<string> $files @return array<string> */
     protected function publicApiCandidates(array $files): array
     {
@@ -209,7 +252,7 @@ class ArchitectureInspector
         foreach ($files as $file) {
             foreach ($this->sourceScanner->imports($file) as $import) {
                 foreach ($this->config->modules() as $candidate) {
-                    if ($candidate !== $module && preg_match('/\\\\' . preg_quote($candidate, '/') . '(\\\\|$)/', $import)) {
+                    if ($candidate !== $module && preg_match('/\\' . preg_quote($candidate, '/') . '(\\\\|$)/', $import)) {
                         $dependencies[] = $candidate;
                     }
                 }
