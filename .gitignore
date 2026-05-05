@@ -17,6 +17,23 @@ vendor/
 *.swp
 *.swo
 
+# Environment
+.env
+.env.local
+.env.*
+
+# Logs
+*.log
+
+# Temporary files
+*.tmp
+*.swp
+*.swo
+
+# IDE
+.vscode/
+.idea/
+
 # OS
 .DS_Store
 Thumbs.db
@@ -106,4 +123,5 @@ htmlcov/
 *.tar.bz2
 *.tar.xz
 *.tar.zst
+composer.lock
 ```

@@ -19,17 +19,16 @@ it('generates per-module docs', function () {
     $this->artisan('hex:docs:generate')->assertSuccessful();
 
     $docsPath = $this->app->basePath('docs/architecture');
-    expect(file_exists($docsPath . '/modules/product.md'))->toBeTrue()
-        ->and(file_exists($docsPath . '/modules/order.md'))->toBeTrue()
+    expect(file_exists($docsPath . '/modules/example.md'))->toBeTrue()
         ->and(file_exists($docsPath . '/modules/shared.md'))->toBeTrue();
 });
 
 it('generates docs for a single module with --module', function () {
-    $this->artisan('hex:docs:generate', ['--module' => 'Product'])->assertSuccessful();
+    $this->artisan('hex:docs:generate', ['--module' => 'Example'])->assertSuccessful();
 
     $docsPath = $this->app->basePath('docs/architecture');
-    expect(file_exists($docsPath . '/modules/product.md'))->toBeTrue()
-        ->and(file_exists($docsPath . '/modules/order.md'))->toBeFalse();
+    expect(file_exists($docsPath . '/modules/example.md'))->toBeTrue()
+        ->and(file_exists($docsPath . '/modules/shared.md'))->toBeFalse();
 });
 
 it('does not overwrite existing docs without --force', function () {
