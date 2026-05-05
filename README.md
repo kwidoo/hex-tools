@@ -5,7 +5,7 @@
 [![PHP](https://img.shields.io/badge/PHP-8.2%2B-blue.svg)](https://www.php.net)
 [![Laravel](https://img.shields.io/badge/Laravel-11%20%7C%2012-red.svg)](https://laravel.com)
 
-Laravel development tools for Hexagonal / Clean Architecture projects.
+`kwidoo/hex-tools` is a pragmatic Laravel/PHP toolkit for generating, inspecting, documenting, and enforcing hexagonal architecture boundaries.
 
 ## Installation
 
@@ -26,6 +26,11 @@ php artisan hex:deptrac:modules
 | `hex:deptrac:layers` | Generate `deptrac.layers.yaml` for strict technical layer checks |
 | `hex:deptrac:modules` | Generate `deptrac.modules.yaml` for business module boundary checks |
 | `hex:map {module}` | Print grouped class map for a module |
+| `hex:inspect` | Inspect modules, layers, dependencies, and architecture issues |
+| `hex:doctor` | Check package configuration and quality-tooling health |
+| `hex:docs` | Generate architecture intelligence documentation |
+| `hex:baseline` | Baseline current architecture issues for legacy projects |
+| `hex:explain {rule}` | Explain a known architecture rule code |
 | `hex:module:init {module}` | Create module folder skeleton and docs stub |
 | `hex:docs:generate` | Generate architecture documentation from config |
 | `hex:adr:create {title}` | Create a numbered Architecture Decision Record |
@@ -81,6 +86,19 @@ php artisan hex:module:init NewModule --with-folders
 # Create an Architecture Decision Record
 php artisan hex:adr:create "Domain must not use Eloquent" --status=accepted
 ```
+
+## Architecture Intelligence
+
+```bash
+php artisan hex:inspect --format=json
+php artisan hex:inspect --module=Product --fail-on-violations
+php artisan hex:doctor --strict
+php artisan hex:docs --output=docs/architecture --force
+php artisan hex:baseline --output=.hex/baseline/architecture.json
+php artisan hex:explain domain_depends_on_framework
+```
+
+`hex:inspect` analyzes source structure and reports conservative rule violations such as Domain depending on framework or Infrastructure code. `hex:doctor` checks setup health, including config files, quality tooling, CI workflow, module paths, and composer scripts. `hex:baseline` stores stable hashes for current issues so future inspections can distinguish existing baseline issues from new ones.
 
 ## PHPMD
 

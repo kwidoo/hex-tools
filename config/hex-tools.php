@@ -10,6 +10,18 @@ return [
         'build' => base_path('build/architecture'),
     ],
 
+    'docs' => [
+        'output_path' => base_path('docs/architecture'),
+    ],
+
+    'baseline' => [
+        'path' => base_path('.hex/baseline/architecture.json'),
+    ],
+
+    'architecture' => [
+        'expected_layers' => ['Domain', 'Application'],
+    ],
+
     'modules' => [
         'Billing',
         'Category',

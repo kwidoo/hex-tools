@@ -3,7 +3,17 @@
 namespace Kwidoo\HexTools;
 
 use Illuminate\Support\ServiceProvider;
+use Kwidoo\HexTools\Application\Analysis\ArchitectureDoctor;
+use Kwidoo\HexTools\Application\Analysis\ArchitectureDocumentationGenerator;
+use Kwidoo\HexTools\Application\Analysis\ArchitectureInspector;
+use Kwidoo\HexTools\Application\Analysis\BaselineRepository;
+use Kwidoo\HexTools\Application\Analysis\ExplanationProvider;
+use Kwidoo\HexTools\Application\Reports\ArchitectureReportFormatter;
+use Kwidoo\HexTools\Commands\BaselineCommand;
 use Kwidoo\HexTools\Commands\CreateAdrCommand;
+use Kwidoo\HexTools\Commands\DoctorCommand;
+use Kwidoo\HexTools\Commands\DocsCommand;
+use Kwidoo\HexTools\Commands\ExplainCommand;
 use Kwidoo\HexTools\Commands\GenerateDocsCommand;
 use Kwidoo\HexTools\Commands\GenerateLayersDeptracCommand;
 use Kwidoo\HexTools\Commands\GenerateMermaidCommand;
@@ -18,6 +28,7 @@ use Kwidoo\HexTools\Commands\RunPhpMdCommand;
 use Kwidoo\HexTools\Commands\InitModuleCommand;
 use Kwidoo\HexTools\Commands\InstallHexToolsCommand;
 use Kwidoo\HexTools\Commands\InstallPhpStanCommand;
+use Kwidoo\HexTools\Commands\InspectCommand;
 use Kwidoo\HexTools\Config\HexToolsConfig;
 use Kwidoo\HexTools\Generators\AdrGenerator;
 use Kwidoo\HexTools\Generators\ComposerScriptsInstaller;
@@ -32,6 +43,7 @@ use Kwidoo\HexTools\Generators\PhpMdRulesetGenerator;
 use Kwidoo\HexTools\Generators\PhpStanComposerScriptsInstaller;
 use Kwidoo\HexTools\Generators\PhpStanConfigGenerator;
 use Kwidoo\HexTools\Generators\StaticAnalysisDocsGenerator;
+use Kwidoo\HexTools\Infrastructure\Filesystem\SourceFileScanner;
 use Kwidoo\HexTools\Scanners\ClassNameResolver;
 use Kwidoo\HexTools\Scanners\ModuleScanner;
 use Kwidoo\HexTools\Support\Filesystem;
@@ -56,6 +68,13 @@ class HexToolsServiceProvider extends ServiceProvider
         $this->app->singleton(ComposerScriptsInstaller::class);
         $this->app->singleton(PhpStanComposerScriptsInstaller::class);
         $this->app->singleton(PhpMdComposerScriptsInstaller::class);
+        $this->app->singleton(SourceFileScanner::class);
+        $this->app->singleton(BaselineRepository::class);
+        $this->app->singleton(ArchitectureInspector::class);
+        $this->app->singleton(ArchitectureDoctor::class);
+        $this->app->singleton(ArchitectureDocumentationGenerator::class);
+        $this->app->singleton(ExplanationProvider::class);
+        $this->app->singleton(ArchitectureReportFormatter::class);
 
         $this->app->singleton(ClassNameResolver::class, function ($app) {
             $config = $app->make(HexToolsConfig::class);
@@ -161,6 +180,11 @@ class HexToolsServiceProvider extends ServiceProvider
                 GeneratePhpMdCommand::class,
                 GeneratePhpMdBaselineCommand::class,
                 RunPhpMdCommand::class,
+                InspectCommand::class,
+                DoctorCommand::class,
+                DocsCommand::class,
+                BaselineCommand::class,
+                ExplainCommand::class,
             ]);
         }
     }
