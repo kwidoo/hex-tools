@@ -13,8 +13,7 @@ it('generates deptrac.modules.yaml', function () {
     $parsed = Yaml::parseFile($output);
     $layerNames = array_column($parsed['deptrac']['layers'], 'name');
 
-    expect($layerNames)->toContain('Product')
-        ->and($layerNames)->toContain('Order')
+    expect($layerNames)->toContain('Example')
         ->and($layerNames)->toContain('Shared');
 
     unlink($output);
@@ -51,10 +50,52 @@ it('uses module rules from config', function () {
     $parsed = Yaml::parseFile($output);
     $ruleset = $parsed['deptrac']['ruleset'];
 
-    // Order may depend on Product and Shared (but not itself in ruleset)
-    expect($ruleset['Order'])->toContain('Product')
-        ->and($ruleset['Order'])->toContain('Shared')
-        ->and($ruleset['Order'])->not->toContain('Order');
+    // Example may depend on Shared (but not itself in ruleset)
+    expect($ruleset['Example'])->toContain('Shared')
+        ->and($ruleset['Example'])->not->toContain('Example');
+
+    unlink($output);
+});
+
+it('contains no business-specific module names in default config', function () {
+    $config = include __DIR__ . '/../../config/hex-tools.php';
+
+    $businessSpecificModules = [
+        'Billing',
+        'Category',
+        'Farmer',
+        'Notification',
+        'Offer',
+        'Order',
+        'Payment',
+        'Pickup',
+        'Product',
+        'User',
+    ];
+
+    foreach ($businessSpecificModules as $module) {
+        expect($config['modules'])->not->toContain($module);
+        expect(array_keys($config['module_rules']))->not->toContain($module);
+    }
+});
+
+it('does not crash when modules is empty', function () {
+    config()->set('hex-tools.modules', []);
+    config()->set('hex-tools.module_rules', []);
+
+    $this->app->forgetInstance(\Kwidoo\HexTools\Config\HexToolsConfig::class);
+    $this->app->forgetInstance(\Kwidoo\HexTools\Generators\DeptracModulesGenerator::class);
+
+    $output = $this->app->basePath('deptrac.modules.yaml');
+    @unlink($output);
+
+    $this->artisan('hex:deptrac:modules')->assertSuccessful();
+
+    expect(file_exists($output))->toBeTrue();
+
+    $parsed = Yaml::parseFile($output);
+    expect($parsed['deptrac']['layers'])->toBeEmpty();
+    expect($parsed['deptrac']['ruleset'])->toBeEmpty();
 
     unlink($output);
 });
