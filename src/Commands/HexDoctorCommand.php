@@ -3,6 +3,11 @@
 namespace Kwidoo\HexTools\Commands;
 
 use Illuminate\Console\Command;
+use Kwidoo\HexTools\Reports\CommandResult;
+use Kwidoo\HexTools\Reports\ConfigStatus;
+use Kwidoo\HexTools\Reports\ComposerScriptStatus;
+use Kwidoo\HexTools\Reports\DoctorReport;
+use Kwidoo\HexTools\Reports\ToolStatus;
 use Kwidoo\HexTools\Domain\Architecture\DoctorCheck;
 use Kwidoo\HexTools\Domain\Architecture\DoctorReport;
 use Kwidoo\HexTools\Support\ProcessRunner;
@@ -16,6 +21,14 @@ class HexDoctorCommand extends Command
         {--run-checks : Run external quality checks when available}';
 
     protected $description = 'Check the architecture tooling state of the project.';
+
+    /** @var string[] */
+    protected array $expectedComposerScripts = [
+        'hex:layers',
+        'hex:modules',
+        'stan',
+        'md',
+    ];
 
     public function __construct(
         protected ToolAvailability $toolAvailability,
@@ -87,6 +100,8 @@ class HexDoctorCommand extends Command
             );
         }
 
+        $report->composerScripts = $this->checkComposerScripts();
+
         // Docs
         $docs = [
             'docs/architecture/deptrac.md',
@@ -124,6 +139,24 @@ class HexDoctorCommand extends Command
         return $checks;
     }
 
+    /** @return ComposerScriptStatus[] */
+    protected function checkComposerScripts(): array
+    {
+        $composerPath = base_path('composer.json');
+        $composerContent = file_exists($composerPath) ? file_get_contents($composerPath) : '';
+        $composer = json_decode($composerContent, true) ?? [];
+        $scripts = is_array($composer) ? ($composer['scripts'] ?? []) : [];
+
+        $result = [];
+        foreach ($this->expectedComposerScripts as $scriptName) {
+            $exists = isset($scripts[$scriptName]);
+            $result[] = new ComposerScriptStatus($scriptName, $exists);
+        }
+
+        return $result;
+    }
+
+    protected function buildSuggestions(DoctorReport $report): array
     /** @return DoctorCheck[] */
     protected function runChecks(): array
     {
@@ -190,6 +223,34 @@ class HexDoctorCommand extends Command
         $this->line("  <fg=yellow>Warnings:</> {$summary['warnings']}");
         $this->line("  <fg=red>Failures:</> {$summary['failures']}");
         $this->line('');
+        $this->line('<options=bold>Configs:</>');
+        foreach ($report->configs as $config) {
+            $status = $config->exists ? '<fg=green>exists</>' : '<fg=yellow>missing</>';
+            $this->line("  {$this->pad($config->name . ':')} {$status}");
+        }
+
+        $this->line('');
+        $this->line('<options=bold>Composer scripts:</>');
+        foreach ($report->composerScripts as $script) {
+            $status = $script->exists ? '<fg=green>✓</>' : '<fg=red>✗</>';
+            $this->line("  {$status} {$script->name}");
+        }
+
+        $this->line('');
+        $this->line('<options=bold>Architecture docs:</>');
+        foreach ($report->docs as $doc) {
+            $status = $doc->exists ? '<fg=green>exists</>' : '<fg=yellow>missing</>';
+            $this->line("  {$this->pad($doc->name . ':')} {$status}");
+        }
+
+        if (!empty($report->results)) {
+            $this->line('');
+            $this->line('<options=bold>Check Results:</>');
+            foreach ($report->results as $result) {
+                $status = $result->passed() ? '<fg=green>passed</>' : '<fg=red>failed</>';
+                $this->line("  {$this->pad($result->tool . ':')} {$status}");
+            }
+        }
 
         $this->line('<options=bold>Checks:</>');
         foreach ($report->checks as $check) {
@@ -208,6 +269,39 @@ class HexDoctorCommand extends Command
 
     protected function outputJson(DoctorReport $report): void
     {
+        $data = [
+            'tools' => array_map(fn (ToolStatus $t) => [
+                'name' => $t->name,
+                'installed' => $t->installed,
+                'binary' => $t->binary,
+            ], $report->tools),
+            'configs' => array_map(fn (ConfigStatus $c) => [
+                'name' => $c->name,
+                'exists' => $c->exists,
+            ], $report->configs),
+            'composer_scripts' => array_map(fn (ComposerScriptStatus $s) => [
+                'name' => $s->name,
+                'exists' => $s->exists,
+            ], $report->composerScripts),
+            'docs' => array_map(fn (ConfigStatus $c) => [
+                'name' => $c->name,
+                'exists' => $c->exists,
+            ], $report->docs),
+            'suggestions' => array_values($report->suggestions),
+            'results' => array_map(fn (CommandResult $r) => [
+                'tool' => $r->tool,
+                'command' => $r->command,
+                'exit_code' => $r->exitCode,
+                'passed' => $r->passed(),
+            ], $report->results),
+        ];
+
+        $this->line(json_encode($data, JSON_PRETTY_PRINT));
+    }
+
+    protected function pad(string $text, int $width = 36): string
+    {
+        return str_pad($text, $width);
         $this->line(json_encode($report->toArray(), JSON_PRETTY_PRINT));
     }
 }

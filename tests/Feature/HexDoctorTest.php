@@ -34,6 +34,23 @@ it('outputs config file names', function () {
         ->expectsOutputToContain('rector.php');
 });
 
+it('outputs composer scripts section', function () {
+    $this->artisan('hex:doctor')
+        ->assertSuccessful()
+        ->expectsOutputToContain('Composer scripts:');
+});
+
+it('shows individual script status with checkmarks', function () {
+    $output = $this->artisan('hex:doctor')
+        ->assertSuccessful()
+        ->output();
+
+    expect($output)->toContain('hex:layers')
+        ->and($output)->toContain('hex:modules')
+        ->and($output)->toContain('stan')
+        ->and($output)->toContain('md');
+});
+
 it('includes suggested next steps', function () {
     $this->artisan('hex:doctor')
         ->assertSuccessful()
@@ -72,12 +89,76 @@ it('returns success with --strict when all important items exist', function () {
         chmod("{$base}/{$bin}", 0755);
     }
 
+    // Add required composer scripts
+    $composerPath = "{$base}/composer.json";
+    $composer = json_decode(file_get_contents($composerPath), true);
+    $composer['scripts']['hex:layers'] = 'vendor/bin/deptrac analyse --config-file=deptrac.layers.yaml';
+    $composer['scripts']['hex:modules'] = 'vendor/bin/deptrac analyse --config-file=deptrac.modules.yaml';
+    $composer['scripts']['stan'] = 'vendor/bin/phpstan analyse --configuration=phpstan.neon.dist --memory-limit=1G';
+    $composer['scripts']['md'] = 'vendor/bin/phpmd app text phpmd.xml';
+    file_put_contents($composerPath, json_encode($composer, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES));
+
     $this->artisan('hex:doctor', ['--strict' => true])
         ->assertSuccessful();
 
+    // Cleanup
     foreach (array_merge($files, $binaries) as $path) {
         @unlink("{$base}/{$path}");
     }
+
+    // Restore original composer.json
+    unset($composer['scripts']['hex:layers']);
+    unset($composer['scripts']['hex:modules']);
+    unset($composer['scripts']['stan']);
+    unset($composer['scripts']['md']);
+    file_put_contents($composerPath, json_encode($composer, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES));
+});
+
+it('returns failure with --strict when composer scripts are missing', function () {
+    $base = $this->app->basePath('');
+
+    $files = [
+        'deptrac.layers.yaml', 'deptrac.modules.yaml',
+        'phpstan.neon.dist', 'phpstan-domain.neon', 'phpstan-application.neon',
+        'phpmd.xml', 'pint.json', 'rector.php',
+    ];
+
+    foreach ($files as $file) {
+        file_put_contents("{$base}/{$file}", 'placeholder');
+    }
+
+    $binaries = [
+        'vendor/bin/deptrac', 'vendor/bin/phpstan',
+        'vendor/bin/phpmd', 'vendor/bin/pint', 'vendor/bin/rector',
+    ];
+
+    foreach ($binaries as $bin) {
+        $dir = dirname("{$base}/{$bin}");
+        if (!is_dir($dir)) {
+            mkdir($dir, 0755, true);
+        }
+        file_put_contents("{$base}/{$bin}", '#!/bin/sh');
+        chmod("{$base}/{$bin}", 0755);
+    }
+
+    // Only add some composer scripts, not all
+    $composerPath = "{$base}/composer.json";
+    $composer = json_decode(file_get_contents($composerPath), true);
+    $composer['scripts']['hex:layers'] = 'vendor/bin/deptrac analyse --config-file=deptrac.layers.yaml';
+    // Missing: hex:modules, stan, md
+    file_put_contents($composerPath, json_encode($composer, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES));
+
+    $this->artisan('hex:doctor', ['--strict' => true])
+        ->assertFailed();
+
+    // Cleanup
+    foreach (array_merge($files, $binaries) as $path) {
+        @unlink("{$base}/{$path}");
+    }
+
+    // Restore original composer.json
+    unset($composer['scripts']['hex:layers']);
+    file_put_contents($composerPath, json_encode($composer, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES));
 });
 
 it('skips unavailable tools during --run-checks', function () {
@@ -95,4 +176,27 @@ it('has only one hex:doctor command registered', function () {
     $commands = $this->app->make(\Illuminate\Console\Application::class)->all();
     $doctorCommands = array_filter($commands, fn ($command) => $command->getName() === 'hex:doctor');
     expect(count($doctorCommands))->toBe(1);
+});
+
+it('includes composer_scripts in JSON output', function () {
+    $output = $this->artisan('hex:doctor', ['--format' => 'json'])
+        ->assertSuccessful()
+        ->output();
+
+    $data = json_decode($output, true);
+
+    expect($data)->toHaveKey('composer_scripts')
+        ->and($data['composer_scripts'])->toBeArray()
+        ->and($data['composer_scripts'][0])->toHaveKeys(['name', 'exists']);
+});
+
+it('reports missing composer scripts individually in JSON', function () {
+    $output = $this->artisan('hex:doctor', ['--format' => 'json'])
+        ->assertSuccessful()
+        ->output();
+
+    $data = json_decode($output, true);
+
+    $scriptNames = array_column($data['composer_scripts'], 'name');
+    expect($scriptNames)->toContain('hex:layers', 'hex:modules', 'stan', 'md');
 });
