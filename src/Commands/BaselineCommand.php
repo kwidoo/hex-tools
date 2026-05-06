@@ -12,7 +12,8 @@ class BaselineCommand extends Command
     protected $signature = 'hex:baseline
         {--output= : Baseline output file}
         {--format=json : Baseline format}
-        {--update : Overwrite an existing baseline}';
+        {--update : Overwrite an existing baseline}
+        {--dry-run : Preview changes without writing files}';
 
     protected $description = 'Create a stable baseline of current architecture issues.';
 
@@ -31,6 +32,13 @@ class BaselineCommand extends Command
             return self::FAILURE;
         }
 
+        $dryRun = (bool) $this->option('dry-run');
+        
+        if ($dryRun) {
+            $this->info('[DRY RUN] No files will be written.');
+            $this->line('');
+        }
+
         $path = $this->option('output') ?: $this->config->get('baseline.path', base_path('.hex/baseline/architecture.json'));
         if (is_file($path) && !$this->option('update')) {
             $this->warn("Baseline already exists: {$path}");
@@ -38,8 +46,16 @@ class BaselineCommand extends Command
         }
 
         $report = $this->inspector->inspect(null, false);
-        $this->baseline->write($path, $report);
-        $this->info("Architecture baseline written: {$path}");
+        
+        if ($dryRun) {
+            $issueCount = count($report->violations() ?? []);
+            $this->line("[DRY RUN] Would write baseline with {$issueCount} issue(s) to: {$path}");
+            $this->line('');
+            $this->info('[DRY RUN] Completed. No changes were made.');
+        } else {
+            $this->baseline->write($path, $report);
+            $this->info("Architecture baseline written: {$path}");
+        }
 
         return self::SUCCESS;
     }
