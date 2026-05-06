@@ -7,6 +7,10 @@
 
 `kwidoo/hex-tools` is a pragmatic Laravel/PHP toolkit for generating, inspecting, documenting, and enforcing hexagonal architecture boundaries.
 
+**Supported Versions:** Laravel 11, 12 | PHP 8.2+
+
+> **TODO:** Laravel 13 support is planned for a future release.
+
 ## Installation
 
 ```bash
